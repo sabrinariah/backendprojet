@@ -10,6 +10,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 public class UserService {
@@ -23,42 +24,47 @@ public class UserService {
     @Autowired
     private KeycloakService keycloakService;
 
-    // 🔹 Créer un utilisateur
+    // 🔹 Créer utilisateur
     public User createUser(CreateUserRequest request) {
+
         keycloakService.createUser(
                 request.getUsername(),
                 request.getEmail(),
                 request.getFirstName(),
                 request.getLastName(),
-                request.getRole()
+                request.getRoles()
         );
 
         User user = new User();
         user.setUsername(request.getUsername());
-        user.setPassword(request.getPassword()); // encoder pour prod
+        user.setPassword(request.getPassword());
         user.setEmail(request.getEmail());
         user.setFirstName(request.getFirstName());
         user.setLastName(request.getLastName());
 
-        Role role = roleRepository.findByName(request.getRole());
-        if (role == null) {
-            role = new Role();
-            role.setName(request.getRole());
-            roleRepository.save(role);
-        }
-        user.setRole(role);
+        // 🔥 Gestion MULTI-ROLES
+        List<Role> roles = request.getRoles().stream().map(roleName -> {
+
+            return roleRepository.findByName(roleName)
+                    .orElseGet(() -> {
+                        Role newRole = new Role();
+                        newRole.setName(roleName);
+                        return roleRepository.save(newRole);
+                    });
+
+        }).collect(Collectors.toList());
+
+        user.setRoles(roles); // ⚠️ nécessite List<Role> dans User
 
         return userRepository.save(user);
     }
 
-    // 🔹 Récupérer tous les utilisateurs
+    // 🔹 Récupérer tous les users
     public List<User> getAllUsers() {
         return userRepository.findAll();
     }
 
-    // 🔹 Modifier un utilisateur
-    // 🔹 Modifier un utilisateur
-// 🔹 Mettre à jour un utilisateur uniquement dans Keycloak
+    // 🔹 UPDATE KEYCLOAK
     public void updateUserKeycloak(String username, CreateUserRequest request) {
         try {
             keycloakService.updateUser(
@@ -67,49 +73,43 @@ public class UserService {
                     request.getFirstName(),
                     request.getLastName()
             );
-            System.out.println("Utilisateur Keycloak mis à jour : " + username);
         } catch (RuntimeException e) {
-            // Gestion claire si l'utilisateur n'existe pas dans Keycloak
-            System.out.println("Utilisateur introuvable dans Keycloak : " + username);
-            throw new RuntimeException("Utilisateur introuvable dans Keycloak : " + username);
+            throw new RuntimeException("Utilisateur introuvable dans Keycloak");
         }
     }
-    // 🔹 Supprimer un utilisateur
+
+    // 🔹 DELETE
     public void deleteUser(String username) {
-        // 1️⃣ Supprimer de Keycloak
         try {
             keycloakService.deleteUser(username);
-            System.out.println("Utilisateur supprimé Keycloak : " + username);
-        } catch (RuntimeException e) {
-            System.out.println("Utilisateur non trouvé dans Keycloak (ignoré) : " + username);
-        }
+        } catch (RuntimeException ignored) {}
 
-        // 2️⃣ Supprimer de la DB
-        Optional<User> userOpt = userRepository.findByUsername(username);
-
-        if (userOpt.isPresent()) {
-            userRepository.delete(userOpt.get());
-            System.out.println("Utilisateur supprimé DB : " + username);
-        } else {
-            System.out.println("Utilisateur non trouvé dans DB (ignoré) : " + username);
-        }
+        userRepository.findByUsername(username).ifPresent(userRepository::delete);
     }
-    // 🔹 Activer / Désactiver utilisateur (DB + Keycloak)
+
+    // 🔹 STATUS
     public void updateUserStatus(String username, boolean active) {
 
-        // 1️⃣ Keycloak (IMPORTANT 🔐)
         keycloakService.toggleUserStatus(username, active);
 
-        // 2️⃣ DB (optionnel mais recommandé)
-        Optional<User> userOpt = userRepository.findByUsername(username);
-
-        if (userOpt.isPresent()) {
-            User user = userOpt.get();
-            user.setActive(active); // ⚠️ suppose que tu as ce champ dans ton entity
+        userRepository.findByUsername(username).ifPresent(user -> {
+            user.setActive(active);
             userRepository.save(user);
-            System.out.println("Statut utilisateur mis à jour DB : " + username);
-        } else {
-            System.out.println("Utilisateur non trouvé dans DB (ignoré) : " + username);
+        });
+    }
+
+    // 🔹 GET USER
+    public User getUserByUsername(String username) {
+        return userRepository.findByUsername(username)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+    }
+
+    // 🔹 UPDATE ROLES
+    public void updateUserRoles(String username, List<String> roles) {
+        try {
+            keycloakService.updateUserRoles(username, roles);
+        } catch (Exception e) {
+            throw new RuntimeException("Erreur mise à jour rôles Keycloak");
         }
     }
 }

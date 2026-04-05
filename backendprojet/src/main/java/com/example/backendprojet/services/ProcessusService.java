@@ -6,8 +6,10 @@ import com.example.backendprojet.entity.Processus;
 import com.example.backendprojet.entity.Tache;
 import com.example.backendprojet.repository.ProcessusRepository;
 import com.example.backendprojet.repository.TacheRepository;
+import org.camunda.bpm.engine.task.Task;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-
+import org.camunda.bpm.engine.TaskService;
 import java.util.List;
 
 @Service
@@ -15,6 +17,8 @@ public class ProcessusService {
 
     private final ProcessusRepository processusRepository;
     private final TacheRepository tacheRepository;
+    @Autowired
+    private TaskService taskService;
 
     public ProcessusService(ProcessusRepository processusRepository, TacheRepository tacheRepository) {
         this.processusRepository = processusRepository;
@@ -94,6 +98,28 @@ public class ProcessusService {
         tache.setDescription(updatedTache.getDescription());
 
         return tacheRepository.save(tache);
+    }
+
+    public void verifierTache(String processInstanceId) {
+
+        Task task = taskService.createTaskQuery()
+                .processInstanceId(processInstanceId)
+                .active()
+                .singleResult();
+
+        if (task == null) {
+            System.out.println("⚠️ Process terminé ou aucune tâche active");
+        } else {
+            System.out.println("✅ Tâche trouvée : " + task.getName());
+            System.out.println("🆔 Task ID : " + task.getId());
+        }
+    }
+
+    public void completeTask(String taskId) {
+
+        taskService.complete(taskId);
+
+        System.out.println("✅ Tâche complétée : " + taskId);
     }
 
 }

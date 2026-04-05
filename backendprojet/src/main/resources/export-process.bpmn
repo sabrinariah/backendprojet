@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL"
+             xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+             xmlns:camunda="http://camunda.org/schema/1.0/bpmn"
+             xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI"
+             xmlns:dc="http://www.omg.org/spec/DD/20100524/DC"
+             xmlns:di="http://www.omg.org/spec/DD/20100524/DI"
+             targetNamespace="http://bpmn.io/schema/bpmn">
+
+  <process id="process_export"
+           name="Processus EXPORT – Commerce International"
+           isExecutable="true">
+
+    <startEvent id="start_export" name="Création de la demande d'export">
+      <outgoing>flow1</outgoing>
+    </startEvent>
+
+    <userTask id="task_saisie_demande" name="Saisie de la demande d'export"/>
+    <userTask id="task_saisie_details" name="Saisie des détails produits"/>
+    <userTask id="task_verif_reglem" name="Vérification réglementaire"/>
+    <exclusiveGateway id="gw_conforme" name="Export autorisé ?"/>
+    <userTask id="task_calcul_frais" name="Calcul des frais export"/>
+    <userTask id="task_gen_documents" name="Génération des documents"/>
+    <userTask id="task_validation_documents" name="Validation des documents"/>
+
+    <endEvent id="end_export" name="Validé"/>
+    <endEvent id="end_refus" name="Refusé"/>
+
+    <!-- FLOWS -->
+    <sequenceFlow id="flow1" sourceRef="start_export" targetRef="task_saisie_demande"/>
+    <sequenceFlow id="flow2" sourceRef="task_saisie_demande" targetRef="task_saisie_details"/>
+    <sequenceFlow id="flow3" sourceRef="task_saisie_details" targetRef="task_verif_reglem"/>
+    <sequenceFlow id="flow4" sourceRef="task_verif_reglem" targetRef="gw_conforme"/>
+
+    <sequenceFlow id="flow5" sourceRef="gw_conforme" targetRef="task_calcul_frais">
+      <conditionExpression xsi:type="tFormalExpression">${exportAutorise == true}</conditionExpression>
+    </sequenceFlow>
+
+    <sequenceFlow id="flow6" sourceRef="gw_conforme" targetRef="end_refus">
+      <conditionExpression xsi:type="tFormalExpression">${exportAutorise == false}</conditionExpression>
+    </sequenceFlow>
+
+    <sequenceFlow id="flow7" sourceRef="task_calcul_frais" targetRef="task_gen_documents"/>
+    <sequenceFlow id="flow8" sourceRef="task_gen_documents" targetRef="task_validation_documents"/>
+    <sequenceFlow id="flow9" sourceRef="task_validation_documents" targetRef="end_export"/>
+
+  </process>
+
+  <!-- 🔥 DIAGRAMME (OBLIGATOIRE POUR L’AFFICHAGE) -->
+  <bpmndi:BPMNDiagram id="Diagram_1">
+    <bpmndi:BPMNPlane id="Plane_1" bpmnElement="process_export">
+
+      <bpmndi:BPMNShape id="startShape" bpmnElement="start_export">
+        <dc:Bounds x="100" y="100" width="36" height="36"/>
+      </bpmndi:BPMNShape>
+
+      <bpmndi:BPMNShape id="task1Shape" bpmnElement="task_saisie_demande">
+        <dc:Bounds x="200" y="80" width="100" height="80"/>
+      </bpmndi:BPMNShape>
+
+      <bpmndi:BPMNShape id="task2Shape" bpmnElement="task_saisie_details">
+        <dc:Bounds x="350" y="80" width="100" height="80"/>
+      </bpmndi:BPMNShape>
+
+      <bpmndi:BPMNShape id="task3Shape" bpmnElement="task_verif_reglem">
+        <dc:Bounds x="500" y="80" width="100" height="80"/>
+      </bpmndi:BPMNShape>
+
+      <bpmndi:BPMNShape id="gatewayShape" bpmnElement="gw_conforme">
+        <dc:Bounds x="650" y="90" width="50" height="50"/>
+      </bpmndi:BPMNShape>
+
+      <bpmndi:BPMNShape id="task4Shape" bpmnElement="task_calcul_frais">
+        <dc:Bounds x="750" y="80" width="100" height="80"/>
+      </bpmndi:BPMNShape>
+
+      <bpmndi:BPMNShape id="task5Shape" bpmnElement="task_gen_documents">
+        <dc:Bounds x="900" y="80" width="100" height="80"/>
+      </bpmndi:BPMNShape>
+
+      <bpmndi:BPMNShape id="task6Shape" bpmnElement="task_validation_documents">
+        <dc:Bounds x="1050" y="80" width="120" height="80"/>
+      </bpmndi:BPMNShape>
+
+      <bpmndi:BPMNShape id="endShape1" bpmnElement="end_export">
+        <dc:Bounds x="1250" y="100" width="36" height="36"/>
+      </bpmndi:BPMNShape>
+
+      <bpmndi:BPMNShape id="endShape2" bpmnElement="end_refus">
+        <dc:Bounds x="750" y="200" width="36" height="36"/>
+      </bpmndi:BPMNShape>
+
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+
+</definitions>

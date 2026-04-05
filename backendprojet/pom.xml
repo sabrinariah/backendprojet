@@ -86,8 +86,26 @@
             <artifactId>spring-boot-starter-test</artifactId>
             <scope>test</scope>
         </dependency>
+        <dependency>
+            <groupId>org.camunda.bpm.springboot</groupId>
+            <artifactId>camunda-bpm-spring-boot-starter</artifactId>
+            <version>7.22.0</version>
+        </dependency>
+            <!-- Camunda Spring Boot Starter -->
+            <dependency>
+                <groupId>org.camunda.bpm.springboot</groupId>
+                <artifactId>camunda-bpm-spring-boot-starter</artifactId>
+                <version>7.20.0</version>
+            </dependency>
 
-    </dependencies>
+            <!-- Webapp Camunda (Cockpit / Tasklist) -->
+            <dependency>
+                <groupId>org.camunda.bpm.springboot</groupId>
+                <artifactId>camunda-bpm-spring-boot-starter-webapp</artifactId>
+                <version>7.20.0</version>
+            </dependency>
+        </dependencies>
+
 
     <build>
         <plugins>

@@ -19,7 +19,19 @@ public class Processus {
     private LocalDate dateDebut;
     private LocalDate dateFin;
     private Boolean actif = true;
+    private String bpmnProcessId; // ✅ AJOUT
 
+    // =========================
+    // GETTERS & SETTERS
+    // =========================
+
+    public String getBpmnProcessId() {
+        return bpmnProcessId;
+    }
+
+    public void setBpmnProcessId(String bpmnProcessId) {
+        this.bpmnProcessId = bpmnProcessId;
+    }
     // Relation OneToMany avec Tache
     @OneToMany(mappedBy = "processus", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Tache> taches = new ArrayList<>();
