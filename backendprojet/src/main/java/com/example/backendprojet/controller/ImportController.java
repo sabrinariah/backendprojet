@@ -2,6 +2,8 @@ package com.example.backendprojet.controller;
 
 import org.camunda.bpm.engine.RuntimeService;
 import org.camunda.bpm.engine.TaskService;
+import org.camunda.bpm.engine.HistoryService;
+import org.camunda.bpm.engine.history.HistoricVariableInstance;
 import org.camunda.bpm.engine.task.Task;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -15,10 +17,16 @@ import java.util.stream.Collectors;
 @CrossOrigin(origins = "http://localhost:4200")
 public class ImportController {
 
-    @Autowired private RuntimeService runtimeService;
-    @Autowired private TaskService taskService;
+    @Autowired
+    private RuntimeService runtimeService;
 
-    // ▶️ Démarrer le processus import
+    @Autowired
+    private TaskService taskService;
+
+    @Autowired
+    private HistoryService historyService;
+
+    // ▶️ Démarrer le processus
     @PostMapping("/demarrer")
     public ResponseEntity<Map<String, Object>> demarrerImport(
             @RequestBody Map<String, Object> variables) {
@@ -53,36 +61,41 @@ public class ImportController {
         return ResponseEntity.ok(result);
     }
 
-    // ✅ Compléter une tâche (CORRIGÉ)
+    // ✅ Compléter une tâche
     @PostMapping("/taches/{taskId}/completer")
     public ResponseEntity<?> completerTache(
             @PathVariable String taskId,
             @RequestBody(required = false) Map<String, Object> variables) {
 
         try {
+
             System.out.println("👉 TaskID reçu: " + taskId);
-            System.out.println("👉 Variables: " + variables);
+            System.out.println("👉 Variables reçues: " + variables);
 
             Task task = taskService.createTaskQuery()
                     .taskId(taskId)
                     .singleResult();
 
-            // ✅ CAS 1 : tâche inexistante
             if (task == null) {
                 return ResponseEntity.status(404).body(
-                        Map.of(
-                                "error", "Tâche introuvable ou déjà complétée",
-                                "taskId", taskId
-                        )
+                        Map.of("error", "Tâche introuvable ou déjà complétée")
                 );
             }
 
-            // ✅ CAS 2 : variables null
             if (variables == null) {
                 variables = new HashMap<>();
             }
 
-            // ✅ Compléter la tâche
+            String taskName = task.getName();
+
+            if ("Inspection physique des marchandises".equals(taskName)) {
+
+                variables.putIfAbsent("conformeMarchandise", "non");
+
+                System.out.println("✔ conformeMarchandise = "
+                        + variables.get("conformeMarchandise"));
+            }
+
             taskService.complete(taskId, variables);
 
             return ResponseEntity.ok(
@@ -93,6 +106,7 @@ public class ImportController {
             );
 
         } catch (Exception e) {
+
             e.printStackTrace();
 
             return ResponseEntity.status(500).body(
@@ -103,15 +117,24 @@ public class ImportController {
             );
         }
     }
-    // 🔍 Variables d'une instance
+
+    // 🔍 VARIABLES D’UNE INSTANCE (CORRIGÉ ✔️)
     @GetMapping("/instance/{processInstanceId}/variables")
     public ResponseEntity<Map<String, Object>> getVariables(
             @PathVariable String processInstanceId) {
 
-        Map<String, Object> variables = runtimeService
-                .getVariables(processInstanceId);
+        List<HistoricVariableInstance> variables =
+                historyService.createHistoricVariableInstanceQuery()
+                        .processInstanceId(processInstanceId)
+                        .list();
 
-        return ResponseEntity.ok(variables);
+        Map<String, Object> result = variables.stream()
+                .collect(Collectors.toMap(
+                        HistoricVariableInstance::getName,
+                        HistoricVariableInstance::getValue
+                ));
+
+        return ResponseEntity.ok(result);
     }
 
     // 📊 Instances

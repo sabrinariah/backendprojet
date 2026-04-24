@@ -109,4 +109,25 @@ public class UserController {
                     .body("Utilisateur introuvable : " + username);
         }
     }
+    // ───────── DÉTAIL UTILISATEUR ─────────
+    @GetMapping("/details/{username}")
+    public ResponseEntity<?> getUserDetails(@PathVariable String username) {
+        try {
+            return ResponseEntity.ok(keycloakService.getUserByUsername(username));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body("Utilisateur introuvable : " + username);
+        }
+    }
+    @PostMapping("/register")
+    public String register(
+            @RequestParam String username,
+            @RequestParam String email,
+            @RequestParam String firstName,
+            @RequestParam String lastName,
+            @RequestParam String password,
+            @RequestParam List<String> roles
+    ) {
+        return keycloakService.registerUser(username, email, firstName, lastName, password, roles);
+    }
 }

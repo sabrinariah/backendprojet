@@ -48,7 +48,7 @@
       <extensionElements>
         <camunda:formData>
           <camunda:formField id="quantite"          label="Quantité"           type="long"   />
-          <camunda:formField id="valeur"            label="Valeur (DZD)"       type="string" />
+          <camunda:formField id="valeur"            label="Valeur "       type="string" />
           <camunda:formField id="codeSH"            label="Code SH"            type="string" />
           <camunda:formField id="origineFinale"     label="Origine finale"     type="string" />
           <camunda:formField id="fournisseur"       label="Fournisseur"        type="string" />
@@ -112,7 +112,7 @@
       <extensionElements>
         <camunda:formData>
           <camunda:formField id="referencePaiement" label="Référence paiement"  type="string" />
-          <camunda:formField id="montantPaye"       label="Montant payé (DZD)"  type="string" />
+          <camunda:formField id="montantPaye"       label="Montant payé "  type="string" />
           <camunda:formField id="datePaiement"      label="Date paiement"       type="string" />
         </camunda:formData>
       </extensionElements>

@@ -1,0 +1,17 @@
+package rules;
+
+import your.package.DemandeExport;
+
+rule "Refuser pays interdit"
+when
+    $d : DemandeExport(pays == "IRAN")
+then
+    $d.setExportAutorise(false);
+end
+
+rule "Autoriser export"
+when
+    $d : DemandeExport(montant < 10000)
+then
+    $d.setExportAutorise(true);
+end

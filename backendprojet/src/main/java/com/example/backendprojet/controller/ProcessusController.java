@@ -1,19 +1,14 @@
 package com.example.backendprojet.controller;
 
 import com.example.backendprojet.entity.Processus;
-import com.example.backendprojet.entity.Tache;
 import com.example.backendprojet.services.ProcessusService;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
-
 import org.camunda.bpm.engine.RuntimeService;
 import org.camunda.bpm.engine.TaskService;
 import org.camunda.bpm.engine.task.Task;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 @RestController
 @RequestMapping("/api/processus")
@@ -21,15 +16,15 @@ import java.util.Map;
 public class ProcessusController {
 
     private final ProcessusService processusService;
+    private final RuntimeService runtimeService;
+    private final TaskService taskService;
 
-    @Autowired
-    private RuntimeService runtimeService;
-
-    @Autowired
-    private TaskService taskService;
-
-    public ProcessusController(ProcessusService processusService) {
+    public ProcessusController(ProcessusService processusService,
+                               RuntimeService runtimeService,
+                               TaskService taskService) {
         this.processusService = processusService;
+        this.runtimeService = runtimeService;
+        this.taskService = taskService;
     }
 
     // =========================
@@ -37,116 +32,108 @@ public class ProcessusController {
     // =========================
 
     @GetMapping
-    public List<Processus> getAll() {
-        return processusService.getAllProcessus();
+    public ResponseEntity<List<Processus>> getAll() {
+        return ResponseEntity.ok(processusService.getAllProcessus());
     }
 
     @GetMapping("/{id}")
-    public Processus getById(@PathVariable Long id) {
-        return processusService.getProcessusById(id);
+    public ResponseEntity<?> getById(@PathVariable Long id) {
+
+        try {
+            Processus p = processusService.getProcessusById(id);
+
+            if (p == null) {
+                return ResponseEntity.status(404)
+                        .body("Processus introuvable");
+            }
+
+            return ResponseEntity.ok(p);
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(500)
+                    .body("Erreur serveur lors du chargement");
+        }
     }
 
     @PostMapping
-    public Processus create(@RequestBody Processus processus) {
-        return processusService.createProcessus(processus);
+    public ResponseEntity<?> create(@RequestBody Processus processus) {
+        try {
+            return ResponseEntity.ok(processusService.createProcessus(processus));
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body("Erreur création processus");
+        }
     }
 
     @PutMapping("/{id}")
-    public Processus update(@PathVariable Long id, @RequestBody Processus processus) {
-        return processusService.updateProcessus(id, processus);
+    public ResponseEntity<?> update(@PathVariable Long id,
+                                    @RequestBody Processus processus) {
+        try {
+            return ResponseEntity.ok(processusService.updateProcessus(id, processus));
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body("Erreur update");
+        }
     }
 
     @PatchMapping("/{id}/toggle")
-    public Processus toggle(@PathVariable Long id) {
-        return processusService.toggleProcessus(id);
+    public ResponseEntity<?> toggle(@PathVariable Long id) {
+        try {
+            return ResponseEntity.ok(processusService.toggleProcessus(id));
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body("Erreur toggle");
+        }
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteProcessus(@PathVariable Long id) {
-        processusService.deleteProcessus(id);
-        return ResponseEntity.noContent().build();
+    public ResponseEntity<?> delete(@PathVariable Long id) {
+        try {
+            processusService.deleteProcessus(id);
+            return ResponseEntity.noContent().build();
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body("Erreur suppression");
+        }
     }
 
     // =========================
-    // TACHES
-    // =========================
-
-    @PostMapping("/{id}/taches")
-    public Tache addTache(@PathVariable Long id, @RequestBody Tache tache) {
-        return processusService.addTacheToProcessus(id, tache);
-    }
-
-    @GetMapping("/{id}/taches")
-    public List<Tache> getTaches(@PathVariable Long id) {
-        return processusService.getTachesByProcessus(id);
-    }
-
-    @PutMapping("/taches/{id}")
-    public Tache updateTache(@PathVariable Long id, @RequestBody Tache tache) {
-        return processusService.updateTache(id, tache);
-    }
-
-    @PutMapping("/{processusId}/taches/{tacheId}")
-    public Tache updateTache(
-            @PathVariable Long processusId,
-            @PathVariable Long tacheId,
-            @RequestBody Tache tache
-    ) {
-        return processusService.updateTache(processusId, tacheId, tache);
-    }
-
-    @DeleteMapping("/taches/{id}")
-    public ResponseEntity<Void> deleteTache(@PathVariable Long id) {
-        processusService.deleteTache(id);
-        return ResponseEntity.noContent().build();
-    }
-
-    // =========================
-    // CAMUNDA - DEMARRER PROCESSUS
+    // START PROCESS (Camunda)
     // =========================
 
     @PostMapping("/demarrer")
-    public ResponseEntity<Map<String, Object>> demarrerExport(@RequestBody Map<String, Object> variables) {
+    public ResponseEntity<?> startProcess(
+            @RequestBody(required = false) Map<String, Object> variables) {
 
-        var instance = runtimeService.startProcessInstanceByKey("process_export", variables);
+        try {
 
-        Map<String, Object> response = new HashMap<>();
-        response.put("processInstanceId", instance.getId());
-        response.put("message", "Processus export démarré avec succès");
+            if (variables == null) {
+                variables = new HashMap<>();
+            }
 
-        return ResponseEntity.ok(response);
-    }
+            System.out.println("👉 START VARIABLES: " + variables);
 
-    // =========================
-    // CAMUNDA - COMPLETER TASK
-    // =========================
+            var instance = runtimeService.startProcessInstanceByKey(
+                    "process_export",
+                    variables
+            );
 
-    @PostMapping("/tasks/{taskId}/complete")
-    public ResponseEntity<String> completeTask(@PathVariable String taskId) {
+            return ResponseEntity.ok(Map.of(
+                    "processInstanceId", instance.getId(),
+                    "message", "Processus démarré ✅"
+            ));
 
-        Task task = taskService.createTaskQuery()
-                .taskId(taskId)
-                .singleResult();
-
-        if (task == null) {
-            return ResponseEntity.status(404)
-                    .body("Task introuvable ou déjà complétée");
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(500).body("Erreur démarrage Camunda");
         }
-
-        System.out.println("Task trouvée : " + task.getId());
-
-        // ✅ Ajouter les variables
-        Map<String, Object> variables = new HashMap<>();
-        variables.put("exportAutorise", true); // ou false selon ton cas
-
-        taskService.complete(taskId, variables);
-
-        return ResponseEntity.ok("Task completed");
     }
-    @GetMapping("/tasks")
-    public List<Map<String, Object>> getTasks() {
 
-        return taskService.createTaskQuery()
+    // =========================
+    // GET TASKS
+    // =========================
+
+    @GetMapping("/tasks")
+    public ResponseEntity<List<Map<String, Object>>> getTasks() {
+
+        List<Map<String, Object>> tasks = taskService.createTaskQuery()
                 .list()
                 .stream()
                 .map(task -> {
@@ -157,5 +144,52 @@ public class ProcessusController {
                     return t;
                 })
                 .toList();
+
+        return ResponseEntity.ok(tasks);
+    }
+
+    // =========================
+    // COMPLETE TASK
+    // =========================
+
+    @PostMapping("/tasks/{taskId}/complete")
+    public ResponseEntity<?> completeTask(
+            @PathVariable String taskId,
+            @RequestBody(required = false) Map<String, Object> variables) {
+
+        try {
+
+            if (variables == null) {
+                variables = new HashMap<>();
+            }
+
+            Task task = taskService.createTaskQuery()
+                    .taskId(taskId)
+                    .singleResult();
+
+            if (task == null) {
+                return ResponseEntity.status(404)
+                        .body("Task introuvable");
+            }
+
+            // 🔥 sécurisation variables
+            Boolean exportAutorise = variables.get("exportAutorise") != null
+                    ? Boolean.valueOf(variables.get("exportAutorise").toString())
+                    : false;
+
+            variables.put("exportAutorise", exportAutorise);
+            variables.putIfAbsent("motifRefus", "");
+
+            taskService.complete(taskId, variables);
+
+            return ResponseEntity.ok(Map.of(
+                    "message", "Task complétée ✅",
+                    "taskId", taskId
+            ));
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(500).body("Erreur Camunda");
+        }
     }
 }

@@ -97,6 +97,29 @@
                 <artifactId>camunda-bpm-spring-boot-starter</artifactId>
                 <version>7.20.0</version>
             </dependency>
+        <dependency>
+            <groupId>org.kie</groupId>
+            <artifactId>kie-api</artifactId>
+            <version>7.74.1.Final</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.drools</groupId>
+            <artifactId>drools-core</artifactId>
+            <version>7.74.1.Final</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.drools</groupId>
+            <artifactId>drools-compiler</artifactId>
+            <version>7.74.1.Final</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.kie</groupId>
+            <artifactId>kie-spring</artifactId>
+            <version>7.74.1.Final</version>
+        </dependency>
 
             <!-- Webapp Camunda (Cockpit / Tasklist) -->
             <dependency>
@@ -105,7 +128,6 @@
                 <version>7.20.0</version>
             </dependency>
         </dependencies>
-
 
     <build>
         <plugins>

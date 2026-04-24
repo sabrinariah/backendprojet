@@ -338,5 +338,75 @@ public class KeycloakService {
 
         System.out.println("✅ Rôles mis à jour pour : " + username);
     }
+    public String registerUser(String username,
+                               String email,
+                               String firstName,
+                               String lastName,
+                               String password,
+                               List<String> roles) {
 
+        // URL Keycloak admin
+        String url = serverUrl + "/admin/realms/" + realmTarget + "/users";
+
+        // credentials (mot de passe dynamique)
+        Map<String, Object> credential = new HashMap<>();
+        credential.put("type", "password");
+        credential.put("value", password); // ✅ mot de passe venant Angular
+        credential.put("temporary", false);
+
+        Map<String, Object> body = new LinkedHashMap<>();
+        body.put("username", username);
+        body.put("email", email);
+        body.put("firstName", firstName);
+        body.put("lastName", lastName);
+        body.put("enabled", true);
+        body.put("emailVerified", true);
+        body.put("credentials", Collections.singletonList(credential));
+
+        HttpEntity<Map<String, Object>> request = new HttpEntity<>(body, authHeaders());
+
+        ResponseEntity<Void> response = restTemplate.postForEntity(url, request, Void.class);
+
+        if (response.getStatusCode() != HttpStatus.CREATED) {
+            throw new RuntimeException("Erreur création utilisateur Keycloak");
+        }
+
+        // récupérer ID user
+        String location = response.getHeaders().getLocation().toString();
+        String userId = location.substring(location.lastIndexOf("/") + 1);
+
+        // assign roles
+        if (roles != null) {
+            for (String role : roles) {
+                assignRoleById(userId, role);
+            }
+        }
+
+        return userId;
+    }
+    // ✅ FORGOT PASSWORD — envoie l'action UPDATE_PASSWORD par email
+    public void sendResetPasswordEmail(String email) {
+        // 1. Chercher l'utilisateur par email
+        String searchUrl = serverUrl + "/admin/realms/" + realmTarget
+                + "/users?email=" + email + "&exact=true";
+
+        HttpEntity<Void> request = new HttpEntity<>(authHeaders());
+        ResponseEntity<List> response = restTemplate.exchange(
+                searchUrl, HttpMethod.GET, request, List.class
+        );
+
+        List<Map<String, Object>> users = (List<Map<String, Object>>) response.getBody();
+        if (users == null || users.isEmpty()) return; // email inconnu → silencieux
+
+        String userId = (String) users.get(0).get("id");
+
+        // 2. Déclencher l'action email UPDATE_PASSWORD
+        String actionUrl = serverUrl + "/admin/realms/" + realmTarget
+                + "/users/" + userId + "/execute-actions-email";
+
+        HttpEntity<List<String>> actionRequest = new HttpEntity<>(
+                List.of("UPDATE_PASSWORD"), authHeaders()
+        );
+        restTemplate.exchange(actionUrl, HttpMethod.PUT, actionRequest, Void.class);
+    }
 }

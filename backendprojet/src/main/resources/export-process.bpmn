@@ -7,26 +7,63 @@
              xmlns:di="http://www.omg.org/spec/DD/20100524/DI"
              targetNamespace="http://bpmn.io/schema/bpmn">
 
+  <!-- ================= PROCESS ================= -->
   <process id="process_export"
            name="Processus EXPORT – Commerce International"
            isExecutable="true">
 
-    <startEvent id="start_export" name="Création de la demande d'export">
+    <startEvent id="start_export" name="Start">
       <outgoing>flow1</outgoing>
     </startEvent>
 
-    <userTask id="task_saisie_demande" name="Saisie de la demande d'export"/>
-    <userTask id="task_saisie_details" name="Saisie des détails produits"/>
-    <userTask id="task_verif_reglem" name="Vérification réglementaire"/>
-    <exclusiveGateway id="gw_conforme" name="Export autorisé ?"/>
-    <userTask id="task_calcul_frais" name="Calcul des frais export"/>
-    <userTask id="task_gen_documents" name="Génération des documents"/>
-    <userTask id="task_validation_documents" name="Validation des documents"/>
+    <userTask id="task_saisie_demande" name="Saisie demande">
+      <incoming>flow1</incoming>
+      <outgoing>flow2</outgoing>
+    </userTask>
 
-    <endEvent id="end_export" name="Validé"/>
-    <endEvent id="end_refus" name="Refusé"/>
+    <userTask id="task_saisie_details" name="Saisie détails">
+      <incoming>flow2</incoming>
+      <outgoing>flow3</outgoing>
+    </userTask>
 
-    <!-- FLOWS -->
+    <serviceTask id="task_verif_reglem"
+                 name="Vérification Drools"
+                 camunda:class="com.example.backendprojet.delegates.RuleDelegate">
+      <incoming>flow3</incoming>
+      <outgoing>flow4</outgoing>
+    </serviceTask>
+
+    <exclusiveGateway id="gw_conforme" name="Export OK ?">
+      <incoming>flow4</incoming>
+      <outgoing>flow5</outgoing>
+      <outgoing>flow6</outgoing>
+    </exclusiveGateway>
+
+    <userTask id="task_calcul_frais" name="Calcul frais">
+      <incoming>flow5</incoming>
+      <outgoing>flow7</outgoing>
+    </userTask>
+
+    <userTask id="task_gen_documents" name="Génération docs">
+      <incoming>flow7</incoming>
+      <outgoing>flow8</outgoing>
+    </userTask>
+
+    <userTask id="task_validation_documents" name="Validation docs">
+      <incoming>flow8</incoming>
+      <outgoing>flow9</outgoing>
+    </userTask>
+
+    <endEvent id="end_export" name="Validé">
+      <incoming>flow9</incoming>
+    </endEvent>
+
+    <endEvent id="end_refus" name="Refusé">
+      <incoming>flow6</incoming>
+    </endEvent>
+
+    <!-- ================= FLOWS ================= -->
+
     <sequenceFlow id="flow1" sourceRef="start_export" targetRef="task_saisie_demande"/>
     <sequenceFlow id="flow2" sourceRef="task_saisie_demande" targetRef="task_saisie_details"/>
     <sequenceFlow id="flow3" sourceRef="task_saisie_details" targetRef="task_verif_reglem"/>
@@ -46,49 +83,106 @@
 
   </process>
 
-  <!-- 🔥 DIAGRAMME (OBLIGATOIRE POUR L’AFFICHAGE) -->
+  <!-- ================= DIAGRAM (TOUTES LES FLÈCHES) ================= -->
   <bpmndi:BPMNDiagram id="Diagram_1">
     <bpmndi:BPMNPlane id="Plane_1" bpmnElement="process_export">
 
+      <!-- START -->
       <bpmndi:BPMNShape id="startShape" bpmnElement="start_export">
-        <dc:Bounds x="100" y="100" width="36" height="36"/>
+        <dc:Bounds x="100" y="120" width="36" height="36"/>
       </bpmndi:BPMNShape>
 
-      <bpmndi:BPMNShape id="task1Shape" bpmnElement="task_saisie_demande">
-        <dc:Bounds x="200" y="80" width="100" height="80"/>
+      <!-- TASK 1 -->
+      <bpmndi:BPMNShape id="t1" bpmnElement="task_saisie_demande">
+        <dc:Bounds x="180" y="100" width="120" height="80"/>
       </bpmndi:BPMNShape>
 
-      <bpmndi:BPMNShape id="task2Shape" bpmnElement="task_saisie_details">
-        <dc:Bounds x="350" y="80" width="100" height="80"/>
+      <!-- TASK 2 -->
+      <bpmndi:BPMNShape id="t2" bpmnElement="task_saisie_details">
+        <dc:Bounds x="340" y="100" width="120" height="80"/>
       </bpmndi:BPMNShape>
 
-      <bpmndi:BPMNShape id="task3Shape" bpmnElement="task_verif_reglem">
-        <dc:Bounds x="500" y="80" width="100" height="80"/>
+      <!-- TASK 3 -->
+      <bpmndi:BPMNShape id="t3" bpmnElement="task_verif_reglem">
+        <dc:Bounds x="500" y="100" width="160" height="80"/>
       </bpmndi:BPMNShape>
 
-      <bpmndi:BPMNShape id="gatewayShape" bpmnElement="gw_conforme">
-        <dc:Bounds x="650" y="90" width="50" height="50"/>
+      <!-- GATEWAY -->
+      <bpmndi:BPMNShape id="gw" bpmnElement="gw_conforme">
+        <dc:Bounds x="700" y="115" width="50" height="50"/>
       </bpmndi:BPMNShape>
 
-      <bpmndi:BPMNShape id="task4Shape" bpmnElement="task_calcul_frais">
-        <dc:Bounds x="750" y="80" width="100" height="80"/>
+      <!-- TASK 4 -->
+      <bpmndi:BPMNShape id="t4" bpmnElement="task_calcul_frais">
+        <dc:Bounds x="800" y="100" width="140" height="80"/>
       </bpmndi:BPMNShape>
 
-      <bpmndi:BPMNShape id="task5Shape" bpmnElement="task_gen_documents">
-        <dc:Bounds x="900" y="80" width="100" height="80"/>
+      <!-- TASK 5 -->
+      <bpmndi:BPMNShape id="t5" bpmnElement="task_gen_documents">
+        <dc:Bounds x="980" y="100" width="140" height="80"/>
       </bpmndi:BPMNShape>
 
-      <bpmndi:BPMNShape id="task6Shape" bpmnElement="task_validation_documents">
-        <dc:Bounds x="1050" y="80" width="120" height="80"/>
+      <!-- TASK 6 -->
+      <bpmndi:BPMNShape id="t6" bpmnElement="task_validation_documents">
+        <dc:Bounds x="1160" y="100" width="150" height="80"/>
       </bpmndi:BPMNShape>
 
-      <bpmndi:BPMNShape id="endShape1" bpmnElement="end_export">
-        <dc:Bounds x="1250" y="100" width="36" height="36"/>
+      <!-- END OK -->
+      <bpmndi:BPMNShape id="end_ok" bpmnElement="end_export">
+        <dc:Bounds x="1360" y="120" width="36" height="36"/>
       </bpmndi:BPMNShape>
 
-      <bpmndi:BPMNShape id="endShape2" bpmnElement="end_refus">
-        <dc:Bounds x="750" y="200" width="36" height="36"/>
+      <!-- END REFUS -->
+      <bpmndi:BPMNShape id="end_no" bpmnElement="end_refus">
+        <dc:Bounds x="720" y="240" width="36" height="36"/>
       </bpmndi:BPMNShape>
+
+      <!-- ================= FLOWS (TOUTES LES FLÈCHES) ================= -->
+
+      <bpmndi:BPMNEdge id="e1" bpmnElement="flow1">
+        <di:waypoint x="136" y="138"/>
+        <di:waypoint x="180" y="140"/>
+      </bpmndi:BPMNEdge>
+
+      <bpmndi:BPMNEdge id="e2" bpmnElement="flow2">
+        <di:waypoint x="300" y="140"/>
+        <di:waypoint x="340" y="140"/>
+      </bpmndi:BPMNEdge>
+
+      <bpmndi:BPMNEdge id="e3" bpmnElement="flow3">
+        <di:waypoint x="460" y="140"/>
+        <di:waypoint x="500" y="140"/>
+      </bpmndi:BPMNEdge>
+
+      <bpmndi:BPMNEdge id="e4" bpmnElement="flow4">
+        <di:waypoint x="660" y="140"/>
+        <di:waypoint x="700" y="140"/>
+      </bpmndi:BPMNEdge>
+
+      <bpmndi:BPMNEdge id="e5" bpmnElement="flow5">
+        <di:waypoint x="750" y="140"/>
+        <di:waypoint x="800" y="140"/>
+      </bpmndi:BPMNEdge>
+
+      <bpmndi:BPMNEdge id="e6" bpmnElement="flow6">
+        <di:waypoint x="725" y="165"/>
+        <di:waypoint x="738" y="240"/>
+      </bpmndi:BPMNEdge>
+
+      <bpmndi:BPMNEdge id="e7" bpmnElement="flow7">
+        <di:waypoint x="940" y="140"/>
+        <di:waypoint x="980" y="140"/>
+      </bpmndi:BPMNEdge>
+
+      <bpmndi:BPMNEdge id="e8" bpmnElement="flow8">
+        <di:waypoint x="1120" y="140"/>
+        <di:waypoint x="1160" y="140"/>
+      </bpmndi:BPMNEdge>
+
+      <bpmndi:BPMNEdge id="e9" bpmnElement="flow9">
+        <di:waypoint x="1310" y="140"/>
+        <di:waypoint x="1360" y="140"/>
+      </bpmndi:BPMNEdge>
 
     </bpmndi:BPMNPlane>
   </bpmndi:BPMNDiagram>

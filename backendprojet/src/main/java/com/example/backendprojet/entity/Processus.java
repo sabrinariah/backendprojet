@@ -110,13 +110,5 @@ public class Processus {
     }
 
     // 🔹 Méthodes utilitaires pour gérer la relation Many-to-Many
-    public void addRegle(RegleMetier regle) {
-        regles.add(regle);
-        regle.getProcessus().add(this);
-    }
 
-    public void removeRegle(RegleMetier regle) {
-        regles.remove(regle);
-        regle.getProcessus().remove(this);
-    }
 }
