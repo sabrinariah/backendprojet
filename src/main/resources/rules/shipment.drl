@@ -1,0 +1,82 @@
+package com.example.backendprojet.rules;
+
+import com.example.backendprojet.rules.ShipmentResult;
+import com.example.backendprojet.entity.DossierExport;
+import com.example.backendprojet.entity.Document;
+import com.example.backendprojet.entity.Marchandise;
+
+// ============================
+// 1. BESC manquant
+// ============================
+rule "R-EXPED-001 - BESC manquant"
+salience 100
+when
+    $d: DossierExport(numeroBESC == null || numeroBESC == "")
+    $r: ShipmentResult()
+then
+    $r.setConforme(false);
+    $r.setMotif("BESC manquant");
+    $r.setHasError(true);
+    update($r);  // ✅ AJOUT
+end
+
+// ============================
+// 2. Certificat origine
+// ============================
+rule "R-EXPED-002 - Certificat d'origine manquant"
+salience 90
+when
+    $d: DossierExport(numeroCertificatOrigine == null || numeroCertificatOrigine == "")
+    $r: ShipmentResult()
+then
+    $r.setConforme(false);
+    $r.setMotif("Certificat d'origine manquant");
+    $r.setHasError(true);
+    update($r);  // ✅ AJOUT
+end
+
+// ============================
+// 3. Certificat phytosanitaire
+// ============================
+rule "R-EXPED-003 - Certificat phytosanitaire"
+salience 80
+when
+    $d: DossierExport($m: marchandise, numeroCertificatPhytosanitaire == null)
+    Marchandise(this == $m, necessiteCertificatPhytosanitaire == true)
+    $r: ShipmentResult()
+then
+    $r.setConforme(false);
+    $r.setMotif("Certificat phytosanitaire manquant");
+    $r.setHasError(true);
+    update($r);  // ✅ AJOUT
+end
+
+// ============================
+// 4. Rapport empotage
+// ============================
+rule "R-EXPED-004 - Rapport empotage"
+salience 70
+when
+    $d: DossierExport($docs: documents)
+    not Document(type == "RAPPORT_EMPOTAGE") from $docs
+    $r: ShipmentResult()
+then
+    $r.setConforme(false);
+    $r.setMotif("Rapport d'empotage manquant");
+    $r.setHasError(true);
+    update($r);  // ✅ AJOUT
+end
+
+// ============================
+// 5. RÈGLE FINALE (SI RIEN NE BLOQUE)
+// ============================
+rule "R-EXPED-999 - Expédition conforme"
+salience -100
+when
+    // ✅ CORRECTION : on vérifie hasError != true (couvre null ET false)
+    $r: ShipmentResult(hasError != true)
+then
+    $r.setConforme(true);
+    $r.setMotif("Expédition conforme");
+    update($r);  // ✅ AJOUT
+end

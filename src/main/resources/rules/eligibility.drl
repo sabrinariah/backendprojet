@@ -1,0 +1,83 @@
+
+
+package com.example.backendprojet.rules;
+
+import com.example.backendprojet.entity.DossierExport;
+import com.example.backendprojet.entity.Marchandise;
+import com.example.backendprojet.entity.TypeMarchandise;
+import com.example.backendprojet.rules.EligibilityResult;
+import com.example.backendprojet.entity.Exportateur;
+import java.math.BigDecimal;
+// ============================================================
+// Règles d'éligibilité à l'exportation
+// ============================================================
+
+rule "R-ELIG-001 - Exportateur non agréé"
+    salience 100
+    when
+        $d: DossierExport($e: exportateur)
+        Exportateur(this == $e, agree == false)
+        $r: EligibilityResult(eligible == null)
+    then
+        $r.setEligible(false);
+        $r.setCode("ELIG_001");
+        $r.setReason("Exportateur non agréé par les autorités compétentes");
+end
+
+rule "R-ELIG-002 - Exportateur non en règle fiscalement"
+    salience 99
+    when
+        $d: DossierExport($e: exportateur)
+        Exportateur(this == $e, agree == true, enRegle == false)
+        $r: EligibilityResult(eligible == null)
+    then
+        $r.setEligible(false);
+        $r.setCode("ELIG_002");
+        $r.setReason("Exportateur non en règle vis-à-vis de l'administration fiscale");
+end
+
+rule "R-ELIG-003 - Marchandise interdite à l'export (codes SH 97/99)"
+    salience 95
+    when
+        $d: DossierExport($m: marchandise)
+        Marchandise(this == $m, codeSH matches "^(97|99).*")
+        $r: EligibilityResult(eligible == null)
+    then
+        $r.setEligible(false);
+        $r.setCode("ELIG_003");
+        $r.setReason("Marchandise interdite à l'exportation (code SH " + $m.getCodeSH() + ")");
+end
+
+rule "R-ELIG-004 - Valeur FOB inférieure au minimum"
+    salience 90
+    when
+        $d: DossierExport($m: marchandise)
+        Marchandise(this == $m, valeurFob.compareTo(new java.math.BigDecimal("100000")) < 0)
+        $r: EligibilityResult(eligible == null)
+    then
+        $r.setEligible(false);
+        $r.setCode("ELIG_004");
+        $r.setReason("Valeur FOB inférieure au minimum requis (100 000 XAF)");
+end
+
+rule "R-ELIG-005 - Poids invalide"
+    salience 85
+    when
+        $d: DossierExport($m: marchandise)
+        Marchandise(this == $m, poidsKg.compareTo(java.math.BigDecimal.ZERO) <= 0)
+        $r: EligibilityResult(eligible == null)
+    then
+        $r.setEligible(false);
+        $r.setCode("ELIG_005");
+        $r.setReason("Poids de la marchandise invalide");
+end
+
+rule "R-ELIG-999 - Dossier éligible"
+    salience -10
+    when
+        $r: EligibilityResult(eligible == null)
+    then
+        $r.setEligible(true);
+        $r.setCode("ELIG_OK");
+        $r.setReason("Dossier éligible à l'exportation");
+end

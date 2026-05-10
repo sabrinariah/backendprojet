@@ -1,0 +1,101 @@
+package com.example.backendprojet.rules;
+
+import com.example.backendprojet.entity.DossierExport;
+import com.example.backendprojet.entity.Marchandise;
+import com.example.backendprojet.entity.Exportateur;
+import com.example.backendprojet.entity.CircuitType;
+import com.example.backendprojet.entity.TypeMarchandise;
+import com.example.backendprojet.rules.RiskResult;
+
+import java.math.BigDecimal;
+
+// ============================================================
+// Règles d'analyse de risque (sélectivité douane)
+// Score : 0-30 = VERT, 31-60 = ORANGE, 61-100 = ROUGE
+// ============================================================
+
+rule "R-RISK-001 - Marchandise dangereuse +50 points"
+    salience 100
+    when
+        $d: DossierExport($m: marchandise)
+        Marchandise(this == $m, dangereuse == true)
+        $r: RiskResult()
+    then
+        $r.setScore($r.getScore() + 50);
+        update($r);
+end
+
+rule "R-RISK-002 - Marchandise minière +30 points"
+    salience 99
+    when
+        $d: DossierExport($m: marchandise)
+        Marchandise(this == $m, type == TypeMarchandise.MINIERE)
+        $r: RiskResult()
+    then
+        $r.setScore($r.getScore() + 30);
+        update($r);
+end
+
+rule "R-RISK-003 - Marchandise bois +25 points (CITES)"
+    salience 98
+    when
+        $d: DossierExport($m: marchandise)
+        Marchandise(this == $m, type == TypeMarchandise.BOIS)
+        $r: RiskResult()
+    then
+        $r.setScore($r.getScore() + 25);
+        update($r);
+end
+
+rule "R-RISK-004 - Valeur élevée (>50M XAF) +20 points"
+    salience 97
+    when
+        $d: DossierExport($m: marchandise)
+        Marchandise(this == $m, valeurFob.compareTo(new BigDecimal("50000000")) > 0)
+        $r: RiskResult()
+    then
+        $r.setScore($r.getScore() + 20);
+        update($r);
+end
+
+rule "R-RISK-005 - Exportateur agréé fiable -15 points"
+    salience 96
+    when
+        $d: DossierExport($e: exportateur)
+        Exportateur(this == $e, agree == true, enRegle == true)
+        $r: RiskResult()
+    then
+        $r.setScore(Math.max(0, $r.getScore() - 15));
+        update($r);
+end
+
+// ✅ CORRECTION : GREEN → VERT, RED → ROUGE
+rule "R-RISK-FINAL-GREEN - Circuit vert"
+    salience -10
+    when
+        $r: RiskResult(circuit == null, score <= 30)
+    then
+        $r.setCircuit(CircuitType.VERT);
+        $r.setMotif("Risque faible (score=" + $r.getScore() + ") - Circuit vert");
+        update($r);
+end
+
+rule "R-RISK-FINAL-ORANGE - Circuit orange"
+    salience -10
+    when
+        $r: RiskResult(circuit == null, score > 30, score <= 60)
+    then
+        $r.setCircuit(CircuitType.ORANGE);
+        $r.setMotif("Risque modéré (score=" + $r.getScore() + ") - Contrôle documentaire");
+        update($r);
+end
+
+rule "R-RISK-FINAL-RED - Circuit rouge"
+    salience -10
+    when
+        $r: RiskResult(circuit == null, score > 60)
+    then
+        $r.setCircuit(CircuitType.ROUGE);
+        $r.setMotif("Risque élevé (score=" + $r.getScore() + ") - Inspection physique");
+        update($r);
+end

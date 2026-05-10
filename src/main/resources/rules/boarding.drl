@@ -1,0 +1,43 @@
+package com.example.backendprojet.rules;
+
+import com.example.backendprojet.entity.DossierExport;
+import com.example.backendprojet.rules.BoardingResult;
+
+rule "R-BOARD-001 - Paiement non confirmé"
+    salience 100
+    when
+        $d: DossierExport(paiementConfirme == null || paiementConfirme == false)
+        $r: BoardingResult()
+    then
+        $r.setConditionsOK(false);
+        $r.setMotif("Confirmation de paiement manquante");
+end
+
+rule "R-BOARD-002 - Bon à embarquer manquant"
+    salience 99
+    when
+        $d: DossierExport(numeroBonAEmbarquer == null || numeroBonAEmbarquer == "")
+        $r: BoardingResult()
+    then
+        $r.setConditionsOK(false);
+        $r.setMotif("Bon à embarquer manquant");
+end
+
+rule "R-BOARD-003 - BESC manquant pour embarquement"
+    salience 98
+    when
+        $d: DossierExport(numeroBESC == null || numeroBESC == "")
+        $r: BoardingResult()
+    then
+        $r.setConditionsOK(false);
+        $r.setMotif("BESC manquant pour embarquement");
+end
+
+rule "R-BOARD-999 - Conditions d'embarquement OK"
+    salience -10
+    when
+        $r: BoardingResult(conditionsOK == null)
+    then
+        $r.setConditionsOK(true);
+        $r.setMotif("Conditions d'embarquement remplies");
+end

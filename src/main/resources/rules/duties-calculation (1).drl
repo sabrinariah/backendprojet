@@ -1,0 +1,84 @@
+package com.example.backendprojet.rules;
+
+import com.example.backendprojet.entity.DossierExport;
+import com.example.backendprojet.entity.Marchandise;
+import com.example.backendprojet.entity.TypeMarchandise;
+import com.example.backendprojet.rules.DutiesResult;
+
+import java.math.BigDecimal;
+import java.math.RoundingMode;
+
+// ============================================================
+// Règles de calcul des droits, taxes et redevances export
+// ============================================================
+
+rule "R-TAX-001 - Droits sortie marchandise minière (3% valeur FOB)"
+    salience 100
+    when
+        $d: DossierExport($m: marchandise)
+        Marchandise(this == $m, type == TypeMarchandise.MINIERE, $valeur: valeurFob)
+        $r: DutiesResult()
+    then
+        BigDecimal taxe = $valeur.multiply(new BigDecimal("0.03")).setScale(2, RoundingMode.HALF_UP);
+        $r.setDroitsExport($r.getDroitsExport().add(taxe));
+end
+
+rule "R-TAX-002 - Droits sortie bois (5% valeur FOB)"
+    salience 99
+    when
+        $d: DossierExport($m: marchandise)
+        Marchandise(this == $m, type == TypeMarchandise.BOIS, $valeur: valeurFob)
+        $r: DutiesResult()
+    then
+        BigDecimal taxe = $valeur.multiply(new BigDecimal("0.05")).setScale(2, RoundingMode.HALF_UP);
+        $r.setDroitsExport($r.getDroitsExport().add(taxe));
+end
+
+rule "R-TAX-003 - Droits sortie produits agricoles (1.5% valeur FOB)"
+    salience 98
+    when
+        $d: DossierExport($m: marchandise)
+        Marchandise(this == $m, type == TypeMarchandise.AGRICOLE, $valeur: valeurFob)
+        $r: DutiesResult()
+    then
+        BigDecimal taxe = $valeur.multiply(new BigDecimal("0.015")).setScale(2, RoundingMode.HALF_UP);
+        $r.setDroitsExport($r.getDroitsExport().add(taxe));
+end
+
+rule "R-TAX-004 - Redevance informatique douane (forfait 5000 XAF)"
+    salience 50
+    when
+        $d: DossierExport()
+        $r: DutiesResult()
+    then
+        $r.setRedevances($r.getRedevances().add(new BigDecimal("5000")));
+end
+
+rule "R-TAX-005 - Redevance par tonne (1000 XAF/tonne)"
+    salience 49
+    when
+        $d: DossierExport($m: marchandise)
+        Marchandise(this == $m, $poids: poidsKg)
+        $r: DutiesResult()
+    then
+        BigDecimal tonnes = $poids.divide(new BigDecimal("1000"), 2, RoundingMode.HALF_UP);
+        BigDecimal red = tonnes.multiply(new BigDecimal("1000")).setScale(2, RoundingMode.HALF_UP);
+        $r.setRedevances($r.getRedevances().add(red));
+end
+
+rule "R-TAX-006 - Taxe parafiscale port (forfait 15000 XAF)"
+    salience 48
+    when
+        $d: DossierExport()
+        $r: DutiesResult()
+    then
+        $r.setTaxesParafiscales($r.getTaxesParafiscales().add(new BigDecimal("15000")));
+end
+
+rule "R-TAX-FINAL - Calcul total"
+    salience -100
+    when
+        $r: DutiesResult()
+    then
+        $r.calculerTotal();
+end

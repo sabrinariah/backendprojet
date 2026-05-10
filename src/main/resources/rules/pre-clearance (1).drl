@@ -1,0 +1,124 @@
+package com.example.backendprojet.rules;
+
+import com.example.backendprojet.entity.DossierExport;
+import com.example.backendprojet.entity.Document;
+import com.example.backendprojet.rules.PreClearanceResult;
+
+// ============================================================
+// INIT
+// ============================================================
+
+rule "R-PRECL-INIT - Initialisation résultat"
+salience 200
+when
+    $r : PreClearanceResult(conforme == null)
+then
+    System.out.println("🟡 Init PreClearanceResult");
+end
+
+
+// ============================================================
+// RÈGLE 1 - Déclaration douane
+// ============================================================
+
+rule "R-PRECL-001 - Déclaration douane manquante"
+salience 100
+when
+    $d : DossierExport(
+        numeroDeclarationDouane == null ||
+        numeroDeclarationDouane.trim() == ""
+    )
+    $r : PreClearanceResult(conforme == null)
+then
+    $r.setConforme(false);
+    $r.setMotif("Déclaration d'exportation (DE/F1) manquante");
+    update($r);
+
+    System.out.println("🔥 R-PRECL-001 déclenchée");
+end
+
+
+// ============================================================
+// RÈGLE 2 - Banque
+// ============================================================
+
+rule "R-PRECL-002 - Domiciliation bancaire manquante"
+salience 90
+when
+    $d : DossierExport(
+        banqueDomiciliation == null ||
+        banqueDomiciliation.trim() == ""
+    )
+    $r : PreClearanceResult(conforme == null)
+then
+    $r.setConforme(false);
+    $r.setMotif("Domiciliation bancaire manquante");
+    update($r);
+
+    System.out.println("🔥 R-PRECL-002 déclenchée");
+end
+
+
+// ============================================================
+// RÈGLE 3 - Facture commerciale
+// ============================================================
+
+rule "R-PRECL-003 - Facture commerciale manquante"
+salience 80
+when
+    $d : DossierExport(documents != null)
+    $r : PreClearanceResult(conforme == null)
+
+    not Document(type == "FACTURE_COMMERCIALE") from $d.documents
+then
+    $r.setConforme(false);
+    $r.setMotif("Facture commerciale manquante");
+    update($r);
+
+    System.out.println("🔥 R-PRECL-003 déclenchée");
+end
+
+
+// ============================================================
+// RÈGLE 4 - Packing list
+// ============================================================
+
+rule "R-PRECL-004 - Packing list manquant"
+salience 70
+when
+    $d : DossierExport(documents != null)
+    $r : PreClearanceResult(conforme == null)
+
+    not Document(type == "PACKING_LIST") from $d.documents
+then
+    $r.setConforme(false);
+    $r.setMotif("Packing list manquant");
+    update($r);
+
+    System.out.println("🔥 R-PRECL-004 déclenchée");
+end
+
+
+// ============================================================
+// RÈGLE FINALE - CONFORME SI AUCUNE ERREUR
+// ============================================================
+
+rule "R-PRECL-999 - Dossier conforme"
+salience -10
+when
+    $r : PreClearanceResult(conforme == null)
+then
+    $r.setConforme(true);
+    $r.setMotif("Dossier pré-dédouanement conforme");
+    update($r);
+
+    System.out.println("✅ R-PRECL-999 déclenchée");
+end
+rule "TEST FORCE CONFORME"
+salience 1000
+when
+    $r : PreClearanceResult()
+then
+    $r.setConforme(true);
+    update($r);
+end
