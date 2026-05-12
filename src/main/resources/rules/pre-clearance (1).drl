@@ -3,7 +3,7 @@ package com.example.backendprojet.rules;
 import com.example.backendprojet.entity.DossierExport;
 import com.example.backendprojet.entity.Document;
 import com.example.backendprojet.rules.PreClearanceResult;
-
+import com.example.backendprojet.entity.DossierImport;
 // ============================================================
 // INIT
 // ============================================================

@@ -8,5 +8,5 @@ import java.util.List;
 public interface ConditionRepository extends JpaRepository<Condition, Long> {
 
     // ✅ CORRECT
-    List<Condition> findByRegle_Id(Long regleId);
+    List<Condition> findByRegleMetier_Id(Long regleId);
 }

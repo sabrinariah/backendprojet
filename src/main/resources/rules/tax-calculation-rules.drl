@@ -1,0 +1,86 @@
+package com.example.backendprojet.rules;
+
+import com.example.backendprojet.dto.TaxCalculationFact;
+
+// =====================================================================
+// REGLES DE CALCUL DES DROITS ET TAXES
+// Utilisé par : CalculateDutiesAndTaxesDelegate
+// Fact :       TaxCalculationFact
+// =====================================================================
+
+// --- DROITS DE DOUANE ---
+
+rule "Droits de douane - Taux préférentiel UEMOA (5%)"
+    salience 110
+    when
+        $f : TaxCalculationFact(
+            valeurCAF != null,
+            paysOrigine in ("SENEGAL", "COTE_IVOIRE", "MALI", "BURKINA_FASO",
+                            "TOGO", "BENIN", "NIGER", "GUINEE_BISSAU"),
+            droitsDouane == 0L
+        )
+    then
+        long droits = (long)($f.getValeurCAF() * 0.05);
+        $f.setDroitsDouane(droits);
+        update($f);
+end
+
+rule "Droits de douane - Taux CEDEAO (10%)"
+    salience 105
+    when
+        $f : TaxCalculationFact(
+            valeurCAF != null,
+            paysOrigine in ("GHANA", "NIGERIA", "LIBERIA", "SIERRA_LEONE", "CAP_VERT"),
+            droitsDouane == 0L
+        )
+    then
+        long droits = (long)($f.getValeurCAF() * 0.10);
+        $f.setDroitsDouane(droits);
+        update($f);
+end
+
+rule "Droits de douane - Standard (20%)"
+    salience 100
+    when
+        $f : TaxCalculationFact(valeurCAF != null, droitsDouane == 0L)
+    then
+        long droits = (long)($f.getValeurCAF() * 0.20);
+        $f.setDroitsDouane(droits);
+        update($f);
+end
+
+// --- TVA ---
+
+rule "TVA - 18%"
+    salience 90
+    when
+        $f : TaxCalculationFact(valeurCAF != null, droitsDouane >= 0L, tva == 0L)
+    then
+        long baseImposable = $f.getValeurCAF() + $f.getDroitsDouane();
+        long tva = (long)(baseImposable * 0.18);
+        $f.setTva(tva);
+        update($f);
+end
+
+// --- AUTRES TAXES (PCS = Prélèvement Communautaire de Solidarité) ---
+
+rule "Autres taxes - PCS 1%"
+    salience 80
+    when
+        $f : TaxCalculationFact(valeurCAF != null, autresTaxes == 0L)
+    then
+        long autres = (long)($f.getValeurCAF() * 0.01);
+        $f.setAutresTaxes(autres);
+        update($f);
+end
+
+// --- TOTAL ---
+
+rule "Total des taxes"
+    salience 1
+    when
+        $f : TaxCalculationFact(totalTaxes == 0L, droitsDouane > 0L || tva > 0L)
+    then
+        $f.calculerTotal();
+        update($f);
+end

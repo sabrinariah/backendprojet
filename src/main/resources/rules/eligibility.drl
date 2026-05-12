@@ -7,6 +7,7 @@ import com.example.backendprojet.entity.Marchandise;
 import com.example.backendprojet.entity.TypeMarchandise;
 import com.example.backendprojet.rules.EligibilityResult;
 import com.example.backendprojet.entity.Exportateur;
+import com.example.backendprojet.entity.DossierImport;
 import java.math.BigDecimal;
 // ============================================================
 // Règles d'éligibilité à l'exportation

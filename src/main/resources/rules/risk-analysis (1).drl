@@ -6,6 +6,8 @@ import com.example.backendprojet.entity.Exportateur;
 import com.example.backendprojet.entity.CircuitType;
 import com.example.backendprojet.entity.TypeMarchandise;
 import com.example.backendprojet.rules.RiskResult;
+import com.example.backendprojet.entity.DossierImport;
+import com.example.backendprojet.entity.CircuitDouane;
 
 import java.math.BigDecimal;
 

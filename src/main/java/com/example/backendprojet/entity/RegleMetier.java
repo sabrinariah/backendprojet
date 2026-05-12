@@ -18,18 +18,29 @@ public class RegleMetier {
     private String action;
     private boolean active;
 
+    @Column(name = "version_num")
+    private Integer version = 1;
+
     // ================= CATEGORIE =================
     @ManyToOne
     @JoinColumn(name = "categorie_id")
     private Categorie categorie;
 
-    // ================= VERSION (CORRIGÉ) =================
+    // ================= CONDITIONS =================
     @OneToMany(
             mappedBy = "regleMetier",
             cascade = CascadeType.ALL,
             orphanRemoval = true
     )
-    @JsonIgnore // 🔥 évite boucle infinie JSON
+    private List<Condition> conditions = new ArrayList<>();
+
+    // ================= VERSIONS (historique) =================
+    @OneToMany(
+            mappedBy = "regleMetier",
+            cascade = CascadeType.ALL,
+            orphanRemoval = true
+    )
+    @JsonIgnore
     private List<Version> versions = new ArrayList<>();
 
     public RegleMetier() {}
@@ -42,8 +53,7 @@ public class RegleMetier {
         this.categorie = categorie;
     }
 
-    // getters & setters
-
+    // ================= GETTERS / SETTERS =================
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
 
@@ -59,8 +69,22 @@ public class RegleMetier {
     public boolean isActive() { return active; }
     public void setActive(boolean active) { this.active = active; }
 
+    public Integer getVersion() { return version; }
+    public void setVersion(Integer version) { this.version = version; }
+
     public Categorie getCategorie() { return categorie; }
     public void setCategorie(Categorie categorie) { this.categorie = categorie; }
+
+    public List<Condition> getConditions() { return conditions; }
+    public void setConditions(List<Condition> conditions) {
+        this.conditions.clear();
+        if (conditions != null) {
+            for (Condition c : conditions) {
+                c.setRegleMetier(this);
+                this.conditions.add(c);
+            }
+        }
+    }
 
     public List<Version> getVersions() { return versions; }
     public void setVersions(List<Version> versions) { this.versions = versions; }

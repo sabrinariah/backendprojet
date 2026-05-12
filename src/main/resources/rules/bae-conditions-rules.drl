@@ -1,0 +1,72 @@
+package com.example.backendprojet.rules;
+
+import com.example.backendprojet.dto.ReleaseConditionsFact;
+
+// =====================================================================
+// REGLES DE VERIFICATION DES CONDITIONS POUR EMETTRE LE BAE
+// Utilisé par : VerifyReleaseConditionsDelegate
+// Fact :       ReleaseConditionsFact
+// =====================================================================
+
+rule "BAE - Paiement non confirmé"
+    salience 100
+    when
+        $f : ReleaseConditionsFact(paiementConfirme == null || paiementConfirme == false)
+    then
+        $f.setConditionsOK(false);
+        $f.setMotifBlocage("Paiement non confirmé");
+        update($f);
+end
+
+rule "BAE - Marchandise non conforme"
+    salience 90
+    when
+        $f : ReleaseConditionsFact(marchandiseConforme == null || marchandiseConforme == false)
+    then
+        $f.setConditionsOK(false);
+        String motif = $f.getMotifBlocage() == null
+            ? "Marchandise non conforme"
+            : $f.getMotifBlocage() + "; Marchandise non conforme";
+        $f.setMotifBlocage(motif);
+        update($f);
+end
+
+rule "BAE - Inspection physique non conforme"
+    salience 85
+    when
+        $f : ReleaseConditionsFact(
+            decisionCircuit == "ROUGE",
+            controleConforme == null || controleConforme == false
+        )
+    then
+        $f.setConditionsOK(false);
+        String motif = $f.getMotifBlocage() == null
+            ? "Inspection physique non conforme"
+            : $f.getMotifBlocage() + "; Inspection physique non conforme";
+        $f.setMotifBlocage(motif);
+        update($f);
+end
+
+rule "BAE - Contrôle documentaire non conforme"
+    salience 80
+    when
+        $f : ReleaseConditionsFact(
+            decisionCircuit == "ORANGE",
+            controleConforme == null || controleConforme == false
+        )
+    then
+        $f.setConditionsOK(false);
+        String motif = $f.getMotifBlocage() == null
+            ? "Contrôle documentaire non conforme"
+            : $f.getMotifBlocage() + "; Contrôle documentaire non conforme";
+        $f.setMotifBlocage(motif);
+        update($f);
+end
+
+rule "BAE - Toutes conditions OK"
+    salience 1
+    when
+        $f : ReleaseConditionsFact(conditionsOK == true, motifBlocage == null)
+    then
+        $f.setMotifBlocage("Conditions BAE remplies");
+end

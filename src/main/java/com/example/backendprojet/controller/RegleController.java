@@ -42,8 +42,7 @@ public class RegleController {
     }
 
     @PutMapping("/{id}")
-    public RegleMetier update(@PathVariable Long id,
-                              @RequestBody RegleMetier r) {
+    public RegleMetier update(@PathVariable Long id, @RequestBody RegleMetier r) {
         return service.update(id, r);
     }
 
@@ -52,7 +51,8 @@ public class RegleController {
         service.delete(id);
     }
 
-    @PutMapping("/toggle/{id}")
+    // ✅ URL corrigée pour correspondre au frontend
+    @PutMapping("/{id}/toggle")
     public RegleMetier toggle(@PathVariable Long id) {
         return service.toggle(id);
     }

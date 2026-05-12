@@ -65,5 +65,6 @@ public enum StatutDossier {
 
     // ── Statuts transverses ───────────────────────────────────────────────────
     SUSPENDU,
-    ANNULE
+    ANNULE,
+    CLOTURE
 }

@@ -1,6 +1,5 @@
 package com.example.backendprojet.services;
 
-
 import com.example.backendprojet.entity.Condition;
 import com.example.backendprojet.repository.ConditionRepository;
 import org.springframework.stereotype.Service;
@@ -16,7 +15,11 @@ public class ConditionService {
         this.conditionRepository = conditionRepository;
     }
 
-    public List<Condition> findByRegleId(Long id) {
-        return conditionRepository.findByRegle_Id(id);
+    public List<Condition> findByRegleId(Long regleId) {
+        return conditionRepository.findByRegleMetier_Id(regleId);
+    }
+
+    public List<Condition> getAll() {
+        return conditionRepository.findAll();
     }
 }

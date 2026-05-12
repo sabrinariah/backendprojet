@@ -9,11 +9,6 @@ import java.util.List;
 @Repository
 public interface VersionRepository extends JpaRepository<Version, Long> {
 
-    // ✅ Méthode existante conservée
+    // ✅ Même règle : utiliser "RegleMetier" pas "Regle"
     List<Version> findByRegleMetier_Id(Long regleId);
-
-    // ✅ FIX suppression : grâce au CASCADE ALL dans RegleMetier,
-    // cette méthode n'est plus nécessaire pour le delete,
-    // mais on la garde pour usage explicite si besoin
-    void deleteByRegleMetier_Id(Long regleId);
 }

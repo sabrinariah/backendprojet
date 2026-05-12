@@ -1,0 +1,1211 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL"
+                  xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI"
+                  xmlns:dc="http://www.omg.org/spec/DD/20100524/DC"
+                  xmlns:di="http://www.omg.org/spec/DD/20100524/DI"
+                  xmlns:camunda="http://camunda.org/schema/1.0/bpmn"
+                  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                  id="Definitions_Processus_Import"
+                  targetNamespace="http://bns-engineering/processus-import">
+
+  <!--
+    LAYOUT STRATEGY — 4 horizontal swim lanes inside one pool:
+      Pool total width  : 5200px
+      Pool label col    : 30px (left)
+      Lane label col    : 120px (left of content)
+      Content starts at : x = 150 (after pool label + lane label)
+
+    Lane Y positions (each lane height = 280px):
+      Lane 1 — Phase 1 Pré-dédouanement : y=0   → 280
+      Lane 2 — Phase 2 Prise en charge  : y=280  → 560
+      Lane 3 — Phase 3 Dédouanement     : y=560  → 840
+      Lane 4 — Phase 4 Enlèvement       : y=840  → 1120
+
+    Element vertical centres (mid of each lane):
+      Lane 1 centre y = 100   (tasks: y=60,  h=80)
+      Lane 2 centre y = 380   (tasks: y=340, h=80)
+      Lane 3 centre y = 660   (tasks: y=620, h=80)
+      Lane 4 centre y = 940   (tasks: y=900, h=80)
+
+    Horizontal spacing: elements spaced 170px apart (x step).
+    Gateways: 50×50, centred on lane centre.
+    Events:   36×36, centred on lane centre.
+  -->
+
+  <bpmn:collaboration id="Collaboration_Import">
+    <bpmn:participant id="Pool_Import" name="Processus Import" processRef="import-process" />
+  </bpmn:collaboration>
+
+  <bpmn:process id="import-process"
+                name="import-process"
+                isExecutable="true"
+                camunda:historyTimeToLive="180">
+
+    <!-- ====================================================
+         LANE DEFINITIONS
+         ==================================================== -->
+    <bpmn:laneSet id="LaneSet_1">
+      <bpmn:lane id="Lane_Phase1" name="Phase 1 : Pré-dédouanement">
+        <bpmn:flowNodeRef>StartEvent_Debut</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Task_Saisie_Dossier</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Service_Verifier_Eligibilite</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Gateway_Eligibilite</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>EndEvent_Rejet</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Task_Procedures_Prealables</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Task_Declaration_Importation_DI</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Task_Domiciliation_Assurance</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Task_Visas_Certificats</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Service_Verifier_PreDedouanement</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Gateway_PreDedouanement</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Task_Complement_PreDedouanement</bpmn:flowNodeRef>
+      </bpmn:lane>
+      <bpmn:lane id="Lane_Phase2" name="Phase 2 : Prise en charge">
+        <bpmn:flowNodeRef>Task_Manifeste_Import</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Task_Dechargement_Entrepot</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Task_Reconnaissance_Marchandise</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Gateway_Marchandise_Conforme</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Task_Traitement_Anomalie</bpmn:flowNodeRef>
+      </bpmn:lane>
+      <bpmn:lane id="Lane_Phase3" name="Phase 3 : Dédouanement">
+        <bpmn:flowNodeRef>Task_Soumission_DAU</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Service_Analyse_Risque</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Gateway_Circuit</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Task_Controle_Documentaire</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Task_Inspection_Physique</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Service_Calcul_Droits_Taxes</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Service_Generation_Avis_Paiement</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Task_Paiement_Electronique</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Service_Confirmation_Quittance</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Gateway_Paiement_Confirme</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Task_Regulariser_Paiement</bpmn:flowNodeRef>
+      </bpmn:lane>
+      <bpmn:lane id="Lane_Phase4" name="Phase 4 : Enlèvement">
+        <bpmn:flowNodeRef>Service_Verifier_Conditions_BAE</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Gateway_Conditions_BAE</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Task_Complement_BAE</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Task_Emission_BAE</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Task_Bon_A_Delivrer</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Task_Constat_Sortie</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Service_Apurement_Dossier</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Service_Cloture_Archivage</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>EndEvent_Fin</bpmn:flowNodeRef>
+      </bpmn:lane>
+    </bpmn:laneSet>
+
+    <!-- ====================================================
+         PHASE 1 : PRÉ-DÉDOUANEMENT
+         ==================================================== -->
+    <bpmn:startEvent id="StartEvent_Debut" name="Début demande import">
+      <bpmn:outgoing>Flow_001</bpmn:outgoing>
+    </bpmn:startEvent>
+
+    <bpmn:userTask id="Task_Saisie_Dossier" name="Saisie dossier import"
+                   camunda:candidateGroups="OPERATEUR,TRANSITAIRE">
+      <bpmn:extensionElements>
+        <camunda:formData>
+          <camunda:formField id="dossierId" label="Numéro de dossier" type="string">
+            <camunda:validation><camunda:constraint name="required" /></camunda:validation>
+          </camunda:formField>
+          <camunda:formField id="importateur" label="Importateur" type="string">
+            <camunda:validation><camunda:constraint name="required" /></camunda:validation>
+          </camunda:formField>
+          <camunda:formField id="paysOrigine" label="Pays d'origine" type="string">
+            <camunda:validation><camunda:constraint name="required" /></camunda:validation>
+          </camunda:formField>
+          <camunda:formField id="typeProduit" label="Type de produit" type="string">
+            <camunda:validation><camunda:constraint name="required" /></camunda:validation>
+          </camunda:formField>
+          <camunda:formField id="nomDossier" label="Nom du dossier" type="string" />
+          <camunda:formField id="dateDepot" label="Date de dépôt" type="date" />
+          <camunda:formField id="importEligible" label="Éligible (Drools)" type="boolean" defaultValue="true" />
+        </camunda:formData>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_001</bpmn:incoming>
+      <bpmn:outgoing>Flow_002</bpmn:outgoing>
+    </bpmn:userTask>
+
+    <bpmn:serviceTask id="Service_Verifier_Eligibilite"
+                      name="[Drools] Vérification éligibilité import"
+                      camunda:delegateExpression="${evaluateImportEligibilityDelegate}"
+                      camunda:asyncBefore="true">
+      <bpmn:incoming>Flow_002</bpmn:incoming>
+      <bpmn:outgoing>Flow_003</bpmn:outgoing>
+    </bpmn:serviceTask>
+
+    <bpmn:exclusiveGateway id="Gateway_Eligibilite" name="Éligible ?" default="Flow_003_No">
+      <bpmn:incoming>Flow_003</bpmn:incoming>
+      <bpmn:outgoing>Flow_003_Yes</bpmn:outgoing>
+      <bpmn:outgoing>Flow_003_No</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+
+    <bpmn:endEvent id="EndEvent_Rejet" name="Dossier import rejeté">
+      <bpmn:incoming>Flow_003_No</bpmn:incoming>
+    </bpmn:endEvent>
+
+    <bpmn:userTask id="Task_Procedures_Prealables" name="Procédures préalables"
+                   camunda:candidateGroups="ADMIN_TECHNIQUE,DOUANE">
+      <bpmn:extensionElements>
+        <camunda:formData>
+          <camunda:formField id="licenceImport" label="N° Licence import" type="string" />
+          <camunda:formField id="autoriteCompetente" label="Autorité compétente" type="string" />
+          <camunda:formField id="referenceAutorisation" label="Référence autorisation" type="string" />
+          <camunda:formField id="observationsPrealables" label="Observations" type="string" />
+        </camunda:formData>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_003_Yes</bpmn:incoming>
+      <bpmn:outgoing>Flow_004</bpmn:outgoing>
+    </bpmn:userTask>
+
+    <bpmn:userTask id="Task_Declaration_Importation_DI" name="Déclaration d'importation DI"
+                   camunda:candidateGroups="OPERATEUR,TRANSITAIRE">
+      <bpmn:extensionElements>
+        <camunda:formData>
+          <camunda:formField id="numeroDI" label="N° DI" type="string">
+            <camunda:validation><camunda:constraint name="required" /></camunda:validation>
+          </camunda:formField>
+          <camunda:formField id="codeSH" label="Code SH marchandise" type="string" />
+          <camunda:formField id="quantite" label="Quantité" type="long" />
+          <camunda:formField id="valeurCAF" label="Valeur CAF" type="long" />
+          <camunda:formField id="deviseFacture" label="Devise facture" type="string" defaultValue="EUR" />
+          <camunda:formField id="origineMarchandise" label="Origine marchandise" type="string" />
+        </camunda:formData>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_004</bpmn:incoming>
+      <bpmn:outgoing>Flow_005</bpmn:outgoing>
+    </bpmn:userTask>
+
+    <bpmn:userTask id="Task_Domiciliation_Assurance" name="Domiciliation bancaire / assurance"
+                   camunda:candidateGroups="BANQUE,ASSURANCE">
+      <bpmn:extensionElements>
+        <camunda:formData>
+          <camunda:formField id="banqueDomiciliataire" label="Banque domiciliataire" type="string">
+            <camunda:validation><camunda:constraint name="required" /></camunda:validation>
+          </camunda:formField>
+          <camunda:formField id="numeroCompte" label="Numéro de compte" type="string" />
+          <camunda:formField id="referenceAssurance" label="Référence assurance" type="string" />
+          <camunda:formField id="montantAssure" label="Montant assuré" type="long" />
+          <camunda:formField id="devise" label="Devise" type="string" defaultValue="EUR" />
+        </camunda:formData>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_005</bpmn:incoming>
+      <bpmn:outgoing>Flow_006</bpmn:outgoing>
+    </bpmn:userTask>
+
+    <bpmn:userTask id="Task_Visas_Certificats" name="Visas techniques / certificats"
+                   camunda:candidateGroups="ADMIN_TECHNIQUE">
+      <bpmn:extensionElements>
+        <camunda:formData>
+          <camunda:formField id="visaTechnique" label="Visa technique fourni" type="boolean" defaultValue="false" />
+          <camunda:formField id="certificatConformite" label="Certificat de conformité" type="boolean" defaultValue="false" />
+          <camunda:formField id="certificatOrigine" label="Certificat d'origine" type="boolean" defaultValue="false" />
+          <camunda:formField id="autresDocuments" label="Autres documents" type="string" />
+          <camunda:formField id="preClearanceConforme" label="Pré-dédouanement conforme (Drools)" type="boolean" defaultValue="true" />
+        </camunda:formData>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_006</bpmn:incoming>
+      <bpmn:outgoing>Flow_007</bpmn:outgoing>
+    </bpmn:userTask>
+
+    <bpmn:serviceTask id="Service_Verifier_PreDedouanement"
+                      name="[Drools] Vérifier pré-dédouanement"
+                      camunda:delegateExpression="${verifyPreClearanceDelegate}"
+                      camunda:asyncBefore="true">
+      <bpmn:incoming>Flow_007</bpmn:incoming>
+      <bpmn:incoming>Flow_008_Retry</bpmn:incoming>
+      <bpmn:outgoing>Flow_008</bpmn:outgoing>
+    </bpmn:serviceTask>
+
+    <bpmn:exclusiveGateway id="Gateway_PreDedouanement" name="Pré-dédouanement conforme ?" default="Flow_008_No">
+      <bpmn:incoming>Flow_008</bpmn:incoming>
+      <bpmn:outgoing>Flow_008_Yes</bpmn:outgoing>
+      <bpmn:outgoing>Flow_008_No</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+
+    <bpmn:userTask id="Task_Complement_PreDedouanement" name="Compléter dossier pré-dédouanement"
+                   camunda:candidateGroups="OPERATEUR,TRANSITAIRE">
+      <bpmn:extensionElements>
+        <camunda:formData>
+          <camunda:formField id="champsCorrigesPre" label="Champs corrigés" type="string" />
+          <camunda:formField id="commentairePre" label="Commentaire" type="string">
+            <camunda:validation><camunda:constraint name="required" /></camunda:validation>
+          </camunda:formField>
+          <camunda:formField id="preClearanceConforme" label="Conforme après correction ?" type="boolean" defaultValue="true" />
+        </camunda:formData>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_008_No</bpmn:incoming>
+      <bpmn:outgoing>Flow_008_Retry</bpmn:outgoing>
+    </bpmn:userTask>
+
+    <!-- ====================================================
+         PHASE 2 : PRISE EN CHARGE
+         ==================================================== -->
+    <bpmn:userTask id="Task_Manifeste_Import" name="Manifeste import"
+                   camunda:candidateGroups="TRANSPORTEUR,DOUANE">
+      <bpmn:extensionElements>
+        <camunda:formData>
+          <camunda:formField id="numeroManifeste" label="N° Manifeste" type="string">
+            <camunda:validation><camunda:constraint name="required" /></camunda:validation>
+          </camunda:formField>
+          <camunda:formField id="navire" label="Nom du navire" type="string" />
+          <camunda:formField id="dateArrivee" label="Date d'arrivée" type="date" />
+          <camunda:formField id="portArrivee" label="Port d'arrivée" type="string" />
+          <camunda:formField id="numeroConnaissement" label="N° Connaissement" type="string" />
+        </camunda:formData>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_008_Yes</bpmn:incoming>
+      <bpmn:outgoing>Flow_009</bpmn:outgoing>
+    </bpmn:userTask>
+
+    <bpmn:userTask id="Task_Dechargement_Entrepot" name="Déchargement / entrée entrepôt"
+                   camunda:candidateGroups="PORT,TERMINAL,DOUANE">
+      <bpmn:extensionElements>
+        <camunda:formData>
+          <camunda:formField id="numeroEntrepot" label="N° Entrepôt" type="string">
+            <camunda:validation><camunda:constraint name="required" /></camunda:validation>
+          </camunda:formField>
+          <camunda:formField id="dateDechargement" label="Date déchargement" type="date" />
+          <camunda:formField id="emplacement" label="Emplacement" type="string" />
+          <camunda:formField id="numeroConteneur" label="N° Conteneur" type="string" />
+        </camunda:formData>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_009</bpmn:incoming>
+      <bpmn:outgoing>Flow_010</bpmn:outgoing>
+    </bpmn:userTask>
+
+    <bpmn:userTask id="Task_Reconnaissance_Marchandise" name="Reconnaissance marchandise"
+                   camunda:candidateGroups="DOUANE,PORT,TERMINAL">
+      <bpmn:extensionElements>
+        <camunda:formData>
+          <camunda:formField id="agentReconnaissance" label="Agent de reconnaissance" type="string">
+            <camunda:validation><camunda:constraint name="required" /></camunda:validation>
+          </camunda:formField>
+          <camunda:formField id="dateReconnaissance" label="Date reconnaissance" type="date" />
+          <camunda:formField id="poidsConstate" label="Poids constaté (kg)" type="long" />
+          <camunda:formField id="anomaliesDetectees" label="Anomalies détectées" type="boolean" defaultValue="false" />
+          <camunda:formField id="observationsRecon" label="Observations" type="string" />
+          <camunda:formField id="marchandiseConforme" label="Marchandise conforme" type="boolean" defaultValue="true" />
+        </camunda:formData>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_010</bpmn:incoming>
+      <bpmn:outgoing>Flow_011</bpmn:outgoing>
+    </bpmn:userTask>
+
+    <bpmn:exclusiveGateway id="Gateway_Marchandise_Conforme" name="Marchandise conforme ?" default="Flow_011_No">
+      <bpmn:incoming>Flow_011</bpmn:incoming>
+      <bpmn:outgoing>Flow_011_Yes</bpmn:outgoing>
+      <bpmn:outgoing>Flow_011_No</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+
+    <bpmn:userTask id="Task_Traitement_Anomalie" name="Traitement anomalie"
+                   camunda:candidateGroups="DOUANE,PORT,OPERATEUR,TRANSITAIRE">
+      <bpmn:extensionElements>
+        <camunda:formData>
+          <camunda:formField id="typeAnomalie" label="Type d'anomalie" type="string">
+            <camunda:validation><camunda:constraint name="required" /></camunda:validation>
+          </camunda:formField>
+          <camunda:formField id="actionCorrective" label="Action corrective" type="string" />
+          <camunda:formField id="rapportAnomalie" label="Rapport d'anomalie" type="string" />
+          <camunda:formField id="anomalieResolue" label="Anomalie résolue" type="boolean" defaultValue="true" />
+        </camunda:formData>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_011_No</bpmn:incoming>
+      <bpmn:outgoing>Flow_011_Anomalie</bpmn:outgoing>
+    </bpmn:userTask>
+
+    <!-- ====================================================
+         PHASE 3 : DÉDOUANEMENT
+         ==================================================== -->
+    <bpmn:userTask id="Task_Soumission_DAU" name="Soumission déclaration douane DAU"
+                   camunda:candidateGroups="TRANSITAIRE,OPERATEUR">
+      <bpmn:extensionElements>
+        <camunda:formData>
+          <camunda:formField id="numeroDeclaration" label="N° Déclaration douane (DAU)" type="string">
+            <camunda:validation><camunda:constraint name="required" /></camunda:validation>
+          </camunda:formField>
+          <camunda:formField id="bureauDouane" label="Bureau de douane" type="string">
+            <camunda:validation><camunda:constraint name="required" /></camunda:validation>
+          </camunda:formField>
+          <camunda:formField id="dateDepotDouane" label="Date dépôt" type="date" />
+          <camunda:formField id="declarant" label="Déclarant" type="string" />
+          <camunda:formField id="decisionCircuit" label="Circuit (Drools)" type="string" defaultValue="VERT">
+            <camunda:value id="VERT" name="Circuit VERT" />
+            <camunda:value id="ORANGE" name="Circuit ORANGE" />
+            <camunda:value id="ROUGE" name="Circuit ROUGE" />
+          </camunda:formField>
+        </camunda:formData>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_011_Yes</bpmn:incoming>
+      <bpmn:incoming>Flow_011_Anomalie</bpmn:incoming>
+      <bpmn:outgoing>Flow_012</bpmn:outgoing>
+    </bpmn:userTask>
+
+    <bpmn:serviceTask id="Service_Analyse_Risque"
+                      name="[Drools] Analyse risque / sélectivité"
+                      camunda:delegateExpression="${riskAnalysisDelegate}"
+                      camunda:asyncBefore="true"
+                      camunda:asyncAfter="true">
+      <bpmn:incoming>Flow_012</bpmn:incoming>
+      <bpmn:outgoing>Flow_013</bpmn:outgoing>
+    </bpmn:serviceTask>
+
+    <bpmn:exclusiveGateway id="Gateway_Circuit" name="Circuit ?">
+      <bpmn:incoming>Flow_013</bpmn:incoming>
+      <bpmn:outgoing>Flow_013_Vert</bpmn:outgoing>
+      <bpmn:outgoing>Flow_013_Orange</bpmn:outgoing>
+      <bpmn:outgoing>Flow_013_Rouge</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+
+    <bpmn:userTask id="Task_Controle_Documentaire" name="Contrôle documentaire"
+                   camunda:candidateGroups="DOUANE">
+      <bpmn:extensionElements>
+        <camunda:formData>
+          <camunda:formField id="agentDouaneDoc" label="Agent douanier" type="string">
+            <camunda:validation><camunda:constraint name="required" /></camunda:validation>
+          </camunda:formField>
+          <camunda:formField id="documentsVerifies" label="Documents vérifiés" type="string" />
+          <camunda:formField id="conformiteDoc" label="Conforme" type="boolean" defaultValue="true" />
+          <camunda:formField id="observationsDoc" label="Observations" type="string" />
+          <camunda:formField id="controleConforme" label="Contrôle conforme" type="boolean" defaultValue="true" />
+        </camunda:formData>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_013_Orange</bpmn:incoming>
+      <bpmn:outgoing>Flow_014_Orange</bpmn:outgoing>
+    </bpmn:userTask>
+
+    <bpmn:userTask id="Task_Inspection_Physique" name="Inspection physique / scanner"
+                   camunda:candidateGroups="DOUANE,PORT,ADMIN_TECHNIQUE">
+      <bpmn:extensionElements>
+        <camunda:formData>
+          <camunda:formField id="agentDouanePhys" label="Agent douanier" type="string">
+            <camunda:validation><camunda:constraint name="required" /></camunda:validation>
+          </camunda:formField>
+          <camunda:formField id="dateInspection" label="Date inspection" type="date" />
+          <camunda:formField id="resultScanner" label="Résultat scanner" type="string" />
+          <camunda:formField id="anomaliesInspection" label="Anomalies détectées" type="boolean" defaultValue="false" />
+          <camunda:formField id="rapportInspection" label="Rapport d'inspection" type="string" />
+          <camunda:formField id="controleConforme" label="Contrôle conforme" type="boolean" defaultValue="true" />
+        </camunda:formData>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_013_Rouge</bpmn:incoming>
+      <bpmn:outgoing>Flow_014_Rouge</bpmn:outgoing>
+    </bpmn:userTask>
+
+    <bpmn:serviceTask id="Service_Calcul_Droits_Taxes"
+                      name="[Drools] Calcul droits et taxes"
+                      camunda:delegateExpression="${calculateDutiesAndTaxesDelegate}"
+                      camunda:asyncBefore="true">
+      <bpmn:incoming>Flow_013_Vert</bpmn:incoming>
+      <bpmn:incoming>Flow_014_Orange</bpmn:incoming>
+      <bpmn:incoming>Flow_014_Rouge</bpmn:incoming>
+      <bpmn:outgoing>Flow_015</bpmn:outgoing>
+    </bpmn:serviceTask>
+
+    <bpmn:serviceTask id="Service_Generation_Avis_Paiement"
+                      name="Génération avis de paiement"
+                      camunda:delegateExpression="${generatePaymentNoticeDelegate}"
+                      camunda:asyncBefore="true">
+      <bpmn:incoming>Flow_015</bpmn:incoming>
+      <bpmn:outgoing>Flow_016</bpmn:outgoing>
+    </bpmn:serviceTask>
+
+    <bpmn:userTask id="Task_Paiement_Electronique" name="Paiement électronique simulé"
+                   camunda:candidateGroups="OPERATEUR,BANQUE">
+      <bpmn:extensionElements>
+        <camunda:formData>
+          <camunda:formField id="referencePaiement" label="Référence paiement" type="string">
+            <camunda:validation><camunda:constraint name="required" /></camunda:validation>
+          </camunda:formField>
+          <camunda:formField id="numeroQuittance" label="Numéro de quittance" type="string">
+            <camunda:validation><camunda:constraint name="required" /></camunda:validation>
+          </camunda:formField>
+          <camunda:formField id="montantPaiement" label="Montant (FCFA)" type="long" />
+          <camunda:formField id="methodePaiement" label="Méthode de paiement" type="string" />
+          <camunda:formField id="banquePaiement" label="Banque" type="string" />
+          <camunda:formField id="datePaiement" label="Date paiement" type="date" />
+          <camunda:formField id="paiementConfirme" label="Paiement confirmé (Drools)" type="boolean" defaultValue="true" />
+        </camunda:formData>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_016</bpmn:incoming>
+      <bpmn:incoming>Flow_017_Retry</bpmn:incoming>
+      <bpmn:outgoing>Flow_017</bpmn:outgoing>
+    </bpmn:userTask>
+
+    <bpmn:serviceTask id="Service_Confirmation_Quittance"
+                      name="Confirmation quittance"
+                      camunda:delegateExpression="${confirmPaymentReceiptDelegate}"
+                      camunda:asyncBefore="true">
+      <bpmn:incoming>Flow_017</bpmn:incoming>
+      <bpmn:outgoing>Flow_018</bpmn:outgoing>
+    </bpmn:serviceTask>
+
+    <bpmn:exclusiveGateway id="Gateway_Paiement_Confirme" name="Paiement confirmé ?" default="Flow_018_No">
+      <bpmn:incoming>Flow_018</bpmn:incoming>
+      <bpmn:outgoing>Flow_018_Yes</bpmn:outgoing>
+      <bpmn:outgoing>Flow_018_No</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+
+    <bpmn:userTask id="Task_Regulariser_Paiement" name="Régulariser paiement"
+                   camunda:candidateGroups="OPERATEUR,BANQUE">
+      <bpmn:extensionElements>
+        <camunda:formData>
+          <camunda:formField id="motifIrregularite" label="Motif irrégularité" type="string">
+            <camunda:validation><camunda:constraint name="required" /></camunda:validation>
+          </camunda:formField>
+          <camunda:formField id="actionCorrectrice" label="Action correctrice" type="string" />
+          <camunda:formField id="nouvelleDatePaiement" label="Nouvelle date" type="date" />
+        </camunda:formData>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_018_No</bpmn:incoming>
+      <bpmn:outgoing>Flow_017_Retry</bpmn:outgoing>
+    </bpmn:userTask>
+
+    <!-- ====================================================
+         PHASE 4 : ENLÈVEMENT
+         ==================================================== -->
+    <bpmn:serviceTask id="Service_Verifier_Conditions_BAE"
+                      name="[Drools] Vérifier conditions BAE"
+                      camunda:delegateExpression="${verifyReleaseConditionsDelegate}"
+                      camunda:asyncBefore="true">
+      <bpmn:incoming>Flow_018_Yes</bpmn:incoming>
+      <bpmn:incoming>Flow_019_Retry</bpmn:incoming>
+      <bpmn:outgoing>Flow_019</bpmn:outgoing>
+    </bpmn:serviceTask>
+
+    <bpmn:exclusiveGateway id="Gateway_Conditions_BAE" name="Conditions OK ?" default="Flow_019_No">
+      <bpmn:incoming>Flow_019</bpmn:incoming>
+      <bpmn:outgoing>Flow_019_Yes</bpmn:outgoing>
+      <bpmn:outgoing>Flow_019_No</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+
+    <bpmn:userTask id="Task_Complement_BAE" name="Compléter conditions BAE"
+                   camunda:candidateGroups="OPERATEUR,TRANSITAIRE">
+      <bpmn:extensionElements>
+        <camunda:formData>
+          <camunda:formField id="conditionManquante" label="Condition manquante" type="string" />
+          <camunda:formField id="mesureCorrectrice" label="Mesure correctrice" type="string">
+            <camunda:validation><camunda:constraint name="required" /></camunda:validation>
+          </camunda:formField>
+          <camunda:formField id="conditionsBaeOK" label="Conditions OK après correction ?" type="boolean" defaultValue="true" />
+        </camunda:formData>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_019_No</bpmn:incoming>
+      <bpmn:outgoing>Flow_019_Retry</bpmn:outgoing>
+    </bpmn:userTask>
+
+    <bpmn:userTask id="Task_Emission_BAE" name="Émission Bon à Enlever (BAE)"
+                   camunda:candidateGroups="DOUANE">
+      <bpmn:extensionElements>
+        <camunda:formData>
+          <camunda:formField id="numeroBAE" label="N° BAE" type="string">
+            <camunda:validation><camunda:constraint name="required" /></camunda:validation>
+          </camunda:formField>
+          <camunda:formField id="agentDouaneBAE" label="Agent douanier" type="string" />
+          <camunda:formField id="dateEmissionBAE" label="Date émission" type="date" />
+          <camunda:formField id="observationsBAE" label="Observations" type="string" />
+        </camunda:formData>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_019_Yes</bpmn:incoming>
+      <bpmn:outgoing>Flow_020</bpmn:outgoing>
+    </bpmn:userTask>
+
+    <bpmn:userTask id="Task_Bon_A_Delivrer" name="Bon à Délivrer (BAD)"
+                   camunda:candidateGroups="ARMATEUR,CONSIGNATAIRE">
+      <bpmn:extensionElements>
+        <camunda:formData>
+          <camunda:formField id="numeroBAD" label="N° BAD" type="string">
+            <camunda:validation><camunda:constraint name="required" /></camunda:validation>
+          </camunda:formField>
+          <camunda:formField id="armateur" label="Armateur" type="string" />
+          <camunda:formField id="dateBAD" label="Date BAD" type="date" />
+          <camunda:formField id="quaiLivraison" label="Quai" type="string" />
+        </camunda:formData>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_020</bpmn:incoming>
+      <bpmn:outgoing>Flow_021</bpmn:outgoing>
+    </bpmn:userTask>
+
+    <bpmn:userTask id="Task_Constat_Sortie" name="Constat de sortie"
+                   camunda:candidateGroups="PORT,DOUANE">
+      <bpmn:extensionElements>
+        <camunda:formData>
+          <camunda:formField id="numeroConstatSortie" label="N° Constat sortie" type="string">
+            <camunda:validation><camunda:constraint name="required" /></camunda:validation>
+          </camunda:formField>
+          <camunda:formField id="dateSortie" label="Date sortie" type="date" />
+          <camunda:formField id="agentControleSortie" label="Agent contrôle sortie" type="string" />
+          <camunda:formField id="conformiteSortie" label="Conforme" type="boolean" defaultValue="true" />
+          <camunda:formField id="observationsSortie" label="Observations" type="string" />
+        </camunda:formData>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_021</bpmn:incoming>
+      <bpmn:outgoing>Flow_022</bpmn:outgoing>
+    </bpmn:userTask>
+
+    <bpmn:serviceTask id="Service_Apurement_Dossier"
+                      name="Apurement dossier import"
+                      camunda:delegateExpression="${clearanceSettlementDelegate}"
+                      camunda:asyncBefore="true">
+      <bpmn:incoming>Flow_022</bpmn:incoming>
+      <bpmn:outgoing>Flow_023</bpmn:outgoing>
+    </bpmn:serviceTask>
+
+    <bpmn:serviceTask id="Service_Cloture_Archivage"
+                      name="Clôture et archivage"
+                      camunda:delegateExpression="${closeAndArchiveImportFileDelegate}"
+                      camunda:asyncBefore="true">
+      <bpmn:incoming>Flow_023</bpmn:incoming>
+      <bpmn:outgoing>Flow_024</bpmn:outgoing>
+    </bpmn:serviceTask>
+
+    <bpmn:endEvent id="EndEvent_Fin" name="Dossier import clôturé">
+      <bpmn:incoming>Flow_024</bpmn:incoming>
+    </bpmn:endEvent>
+
+    <!-- ====================================================
+         SEQUENCE FLOWS
+         ==================================================== -->
+    <!-- Phase 1 -->
+    <bpmn:sequenceFlow id="Flow_001" sourceRef="StartEvent_Debut" targetRef="Task_Saisie_Dossier" />
+    <bpmn:sequenceFlow id="Flow_002" sourceRef="Task_Saisie_Dossier" targetRef="Service_Verifier_Eligibilite" />
+    <bpmn:sequenceFlow id="Flow_003" sourceRef="Service_Verifier_Eligibilite" targetRef="Gateway_Eligibilite" />
+    <bpmn:sequenceFlow id="Flow_003_Yes" name="Oui" sourceRef="Gateway_Eligibilite" targetRef="Task_Procedures_Prealables">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">${importEligible == true}</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="Flow_003_No" name="Non" sourceRef="Gateway_Eligibilite" targetRef="EndEvent_Rejet" />
+    <bpmn:sequenceFlow id="Flow_004" sourceRef="Task_Procedures_Prealables" targetRef="Task_Declaration_Importation_DI" />
+    <bpmn:sequenceFlow id="Flow_005" sourceRef="Task_Declaration_Importation_DI" targetRef="Task_Domiciliation_Assurance" />
+    <bpmn:sequenceFlow id="Flow_006" sourceRef="Task_Domiciliation_Assurance" targetRef="Task_Visas_Certificats" />
+    <bpmn:sequenceFlow id="Flow_007" sourceRef="Task_Visas_Certificats" targetRef="Service_Verifier_PreDedouanement" />
+    <bpmn:sequenceFlow id="Flow_008" sourceRef="Service_Verifier_PreDedouanement" targetRef="Gateway_PreDedouanement" />
+    <bpmn:sequenceFlow id="Flow_008_Yes" name="Oui" sourceRef="Gateway_PreDedouanement" targetRef="Task_Manifeste_Import">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">${preClearanceConforme == true}</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="Flow_008_No" name="Non" sourceRef="Gateway_PreDedouanement" targetRef="Task_Complement_PreDedouanement" />
+    <bpmn:sequenceFlow id="Flow_008_Retry" sourceRef="Task_Complement_PreDedouanement" targetRef="Service_Verifier_PreDedouanement" />
+    <!-- Phase 1 → Phase 2 -->
+    <bpmn:sequenceFlow id="Flow_009" sourceRef="Task_Manifeste_Import" targetRef="Task_Dechargement_Entrepot" />
+    <!-- Phase 2 -->
+    <bpmn:sequenceFlow id="Flow_010" sourceRef="Task_Dechargement_Entrepot" targetRef="Task_Reconnaissance_Marchandise" />
+    <bpmn:sequenceFlow id="Flow_011" sourceRef="Task_Reconnaissance_Marchandise" targetRef="Gateway_Marchandise_Conforme" />
+    <bpmn:sequenceFlow id="Flow_011_Yes" name="Oui" sourceRef="Gateway_Marchandise_Conforme" targetRef="Task_Soumission_DAU">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">${marchandiseConforme == true}</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="Flow_011_No" name="Non" sourceRef="Gateway_Marchandise_Conforme" targetRef="Task_Traitement_Anomalie" />
+    <bpmn:sequenceFlow id="Flow_011_Anomalie" sourceRef="Task_Traitement_Anomalie" targetRef="Task_Soumission_DAU" />
+    <!-- Phase 2 → Phase 3 -->
+    <bpmn:sequenceFlow id="Flow_012" sourceRef="Task_Soumission_DAU" targetRef="Service_Analyse_Risque" />
+    <!-- Phase 3 -->
+    <bpmn:sequenceFlow id="Flow_013" sourceRef="Service_Analyse_Risque" targetRef="Gateway_Circuit" />
+    <bpmn:sequenceFlow id="Flow_013_Vert" name="VERT" sourceRef="Gateway_Circuit" targetRef="Service_Calcul_Droits_Taxes">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">${decisionCircuit == 'VERT'}</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="Flow_013_Orange" name="ORANGE" sourceRef="Gateway_Circuit" targetRef="Task_Controle_Documentaire">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">${decisionCircuit == 'ORANGE'}</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="Flow_013_Rouge" name="ROUGE" sourceRef="Gateway_Circuit" targetRef="Task_Inspection_Physique">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">${decisionCircuit == 'ROUGE'}</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="Flow_014_Orange" sourceRef="Task_Controle_Documentaire" targetRef="Service_Calcul_Droits_Taxes" />
+    <bpmn:sequenceFlow id="Flow_014_Rouge" sourceRef="Task_Inspection_Physique" targetRef="Service_Calcul_Droits_Taxes" />
+    <bpmn:sequenceFlow id="Flow_015" sourceRef="Service_Calcul_Droits_Taxes" targetRef="Service_Generation_Avis_Paiement" />
+    <bpmn:sequenceFlow id="Flow_016" sourceRef="Service_Generation_Avis_Paiement" targetRef="Task_Paiement_Electronique" />
+    <bpmn:sequenceFlow id="Flow_017" sourceRef="Task_Paiement_Electronique" targetRef="Service_Confirmation_Quittance" />
+    <bpmn:sequenceFlow id="Flow_018" sourceRef="Service_Confirmation_Quittance" targetRef="Gateway_Paiement_Confirme" />
+    <bpmn:sequenceFlow id="Flow_018_Yes" name="Oui" sourceRef="Gateway_Paiement_Confirme" targetRef="Service_Verifier_Conditions_BAE">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">${paiementConfirme == true}</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="Flow_018_No" name="Non" sourceRef="Gateway_Paiement_Confirme" targetRef="Task_Regulariser_Paiement" />
+    <bpmn:sequenceFlow id="Flow_017_Retry" sourceRef="Task_Regulariser_Paiement" targetRef="Task_Paiement_Electronique" />
+    <!-- Phase 3 → Phase 4 -->
+    <bpmn:sequenceFlow id="Flow_019" sourceRef="Service_Verifier_Conditions_BAE" targetRef="Gateway_Conditions_BAE" />
+    <!-- Phase 4 -->
+    <bpmn:sequenceFlow id="Flow_019_Yes" name="Oui" sourceRef="Gateway_Conditions_BAE" targetRef="Task_Emission_BAE">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">${conditionsBaeOK == true}</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="Flow_019_No" name="Non" sourceRef="Gateway_Conditions_BAE" targetRef="Task_Complement_BAE" />
+    <bpmn:sequenceFlow id="Flow_019_Retry" sourceRef="Task_Complement_BAE" targetRef="Service_Verifier_Conditions_BAE" />
+    <bpmn:sequenceFlow id="Flow_020" sourceRef="Task_Emission_BAE" targetRef="Task_Bon_A_Delivrer" />
+    <bpmn:sequenceFlow id="Flow_021" sourceRef="Task_Bon_A_Delivrer" targetRef="Task_Constat_Sortie" />
+    <bpmn:sequenceFlow id="Flow_022" sourceRef="Task_Constat_Sortie" targetRef="Service_Apurement_Dossier" />
+    <bpmn:sequenceFlow id="Flow_023" sourceRef="Service_Apurement_Dossier" targetRef="Service_Cloture_Archivage" />
+    <bpmn:sequenceFlow id="Flow_024" sourceRef="Service_Cloture_Archivage" targetRef="EndEvent_Fin" />
+
+  </bpmn:process>
+
+  <!-- ====================================================
+       BPMN DIAGRAM INTERCHANGE — 4 SWIM LANES
+       ====================================================
+
+    Pool:  x=0,    y=0,    width=5200, height=1120
+    Lane 1: y=0    height=280   (centre-y of elements = 100)  tasks: y=60   h=80
+    Lane 2: y=280  height=280   (centre-y = 380)               tasks: y=340  h=80
+    Lane 3: y=560  height=280   (centre-y = 660)               tasks: y=620  h=80  sub-rows at 700/780
+    Lane 4: y=840  height=280   (centre-y = 940)               tasks: y=900  h=80
+
+    Content starts at x=160 (pool label 30 + lane label 130).
+    Horizontal step = 170px between element starts.
+    Tasks/services: width=130, height=80
+    Gateways: 50×50  (cx = task_cx, cy = lane_centre)
+    Events:   36×36
+
+    Element x positions (content area, left edge of element):
+      x0  = 170   StartEvent
+      x1  = 250   Task_Saisie_Dossier
+      x2  = 400   Service_Verifier_Eligibilite
+      x3  = 550   Gateway_Eligibilite          (50w)
+      x3r = 620   EndEvent_Rejet (below gw)
+      x4  = 620   Task_Procedures_Prealables
+      x5  = 770   Task_Declaration_Importation_DI
+      x6  = 920   Task_Domiciliation_Assurance
+      x7  = 1070  Task_Visas_Certificats
+      x8  = 1220  Service_Verifier_PreDedouanement
+      x9  = 1370  Gateway_PreDedouanement       (50w)
+      x9c = 1370  Task_Complement_PreDedouanement (below gw, same column)
+      x10 = 1440  Task_Manifeste_Import          (Phase 2 starts)
+      x11 = 1590  Task_Dechargement_Entrepot
+      x12 = 1740  Task_Reconnaissance_Marchandise
+      x13 = 1890  Gateway_Marchandise_Conforme   (50w)
+      x13a= 1890  Task_Traitement_Anomalie (below gw)
+      x14 = 1960  Task_Soumission_DAU            (Phase 3 starts)
+      x15 = 2110  Service_Analyse_Risque
+      x16 = 2260  Gateway_Circuit                (50w)
+      x16o= 2330  Task_Controle_Documentaire (ORANGE sub-row)
+      x16r= 2330  Task_Inspection_Physique   (ROUGE  sub-row)
+      x17 = 2480  Service_Calcul_Droits_Taxes
+      x18 = 2630  Service_Generation_Avis_Paiement
+      x19 = 2780  Task_Paiement_Electronique
+      x20 = 2930  Service_Confirmation_Quittance
+      x21 = 3080  Gateway_Paiement_Confirme      (50w)
+      x21r= 3080  Task_Regulariser_Paiement (below gw)
+      x22 = 3150  Service_Verifier_Conditions_BAE (Phase 4 starts)
+      x23 = 3300  Gateway_Conditions_BAE          (50w)
+      x23c= 3300  Task_Complement_BAE (below gw)
+      x24 = 3370  Task_Emission_BAE
+      x25 = 3520  Task_Bon_A_Delivrer
+      x26 = 3670  Task_Constat_Sortie
+      x27 = 3820  Service_Apurement_Dossier
+      x28 = 3970  Service_Cloture_Archivage
+      x29 = 4120  EndEvent_Fin
+  -->
+
+  <bpmndi:BPMNDiagram id="BPMNDiagram_1">
+    <bpmndi:BPMNPlane id="BPMNPlane_1" bpmnElement="Collaboration_Import">
+
+      <!-- ===================== POOL ===================== -->
+      <bpmndi:BPMNShape id="Shape_Pool_Import" bpmnElement="Pool_Import" isHorizontal="true">
+        <dc:Bounds x="0" y="0" width="4220" height="1120" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="5" y="530" width="20" height="60" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+
+      <!-- ===================== LANE 1 : Phase 1 ===================== -->
+      <bpmndi:BPMNShape id="Shape_Lane_Phase1" bpmnElement="Lane_Phase1" isHorizontal="true">
+        <dc:Bounds x="30" y="0" width="4190" height="280" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="35" y="90" width="25" height="100" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+
+      <!-- StartEvent  cx=188, cy=100 -->
+      <bpmndi:BPMNShape id="Shape_StartEvent_Debut" bpmnElement="StartEvent_Debut">
+        <dc:Bounds x="170" y="82" width="36" height="36" />
+        <bpmndi:BPMNLabel><dc:Bounds x="148" y="125" width="82" height="27" /></bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+
+      <!-- Task_Saisie_Dossier -->
+      <bpmndi:BPMNShape id="Shape_Task_Saisie_Dossier" bpmnElement="Task_Saisie_Dossier">
+        <dc:Bounds x="250" y="60" width="130" height="80" />
+      </bpmndi:BPMNShape>
+
+      <!-- Service_Verifier_Eligibilite -->
+      <bpmndi:BPMNShape id="Shape_Service_Verifier_Eligibilite" bpmnElement="Service_Verifier_Eligibilite">
+        <dc:Bounds x="400" y="60" width="130" height="80" />
+      </bpmndi:BPMNShape>
+
+      <!-- Gateway_Eligibilite  cx=575, cy=100 -->
+      <bpmndi:BPMNShape id="Shape_Gateway_Eligibilite" bpmnElement="Gateway_Eligibilite" isMarkerVisible="true">
+        <dc:Bounds x="550" y="75" width="50" height="50" />
+        <bpmndi:BPMNLabel><dc:Bounds x="540" y="132" width="70" height="14" /></bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+
+      <!-- EndEvent_Rejet — below Gateway_Eligibilite, same x, in lane 1 lower area -->
+      <bpmndi:BPMNShape id="Shape_EndEvent_Rejet" bpmnElement="EndEvent_Rejet">
+        <dc:Bounds x="557" y="200" width="36" height="36" />
+        <bpmndi:BPMNLabel><dc:Bounds x="534" y="243" width="84" height="27" /></bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+
+      <!-- Task_Procedures_Prealables -->
+      <bpmndi:BPMNShape id="Shape_Task_Procedures_Prealables" bpmnElement="Task_Procedures_Prealables">
+        <dc:Bounds x="620" y="60" width="130" height="80" />
+      </bpmndi:BPMNShape>
+
+      <!-- Task_Declaration_Importation_DI -->
+      <bpmndi:BPMNShape id="Shape_Task_Declaration_Importation_DI" bpmnElement="Task_Declaration_Importation_DI">
+        <dc:Bounds x="770" y="60" width="130" height="80" />
+      </bpmndi:BPMNShape>
+
+      <!-- Task_Domiciliation_Assurance -->
+      <bpmndi:BPMNShape id="Shape_Task_Domiciliation_Assurance" bpmnElement="Task_Domiciliation_Assurance">
+        <dc:Bounds x="920" y="60" width="130" height="80" />
+      </bpmndi:BPMNShape>
+
+      <!-- Task_Visas_Certificats -->
+      <bpmndi:BPMNShape id="Shape_Task_Visas_Certificats" bpmnElement="Task_Visas_Certificats">
+        <dc:Bounds x="1070" y="60" width="130" height="80" />
+      </bpmndi:BPMNShape>
+
+      <!-- Service_Verifier_PreDedouanement -->
+      <bpmndi:BPMNShape id="Shape_Service_Verifier_PreDedouanement" bpmnElement="Service_Verifier_PreDedouanement">
+        <dc:Bounds x="1220" y="60" width="130" height="80" />
+      </bpmndi:BPMNShape>
+
+      <!-- Gateway_PreDedouanement  cx=1395, cy=100 -->
+      <bpmndi:BPMNShape id="Shape_Gateway_PreDedouanement" bpmnElement="Gateway_PreDedouanement" isMarkerVisible="true">
+        <dc:Bounds x="1370" y="75" width="50" height="50" />
+        <bpmndi:BPMNLabel><dc:Bounds x="1340" y="132" width="110" height="27" /></bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+
+      <!-- Task_Complement_PreDedouanement — below gateway in lane 1 -->
+      <bpmndi:BPMNShape id="Shape_Task_Complement_PreDedouanement" bpmnElement="Task_Complement_PreDedouanement">
+        <dc:Bounds x="1345" y="170" width="130" height="80" />
+      </bpmndi:BPMNShape>
+
+      <!-- ===================== LANE 2 : Phase 2 ===================== -->
+      <bpmndi:BPMNShape id="Shape_Lane_Phase2" bpmnElement="Lane_Phase2" isHorizontal="true">
+        <dc:Bounds x="30" y="280" width="4190" height="280" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="35" y="370" width="25" height="100" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+
+      <!-- Task_Manifeste_Import — Lane 2 starts here, x=1440 -->
+      <bpmndi:BPMNShape id="Shape_Task_Manifeste_Import" bpmnElement="Task_Manifeste_Import">
+        <dc:Bounds x="1440" y="340" width="130" height="80" />
+      </bpmndi:BPMNShape>
+
+      <!-- Task_Dechargement_Entrepot -->
+      <bpmndi:BPMNShape id="Shape_Task_Dechargement_Entrepot" bpmnElement="Task_Dechargement_Entrepot">
+        <dc:Bounds x="1590" y="340" width="130" height="80" />
+      </bpmndi:BPMNShape>
+
+      <!-- Task_Reconnaissance_Marchandise -->
+      <bpmndi:BPMNShape id="Shape_Task_Reconnaissance_Marchandise" bpmnElement="Task_Reconnaissance_Marchandise">
+        <dc:Bounds x="1740" y="340" width="130" height="80" />
+      </bpmndi:BPMNShape>
+
+      <!-- Gateway_Marchandise_Conforme  cx=1915, cy=380 -->
+      <bpmndi:BPMNShape id="Shape_Gateway_Marchandise_Conforme" bpmnElement="Gateway_Marchandise_Conforme" isMarkerVisible="true">
+        <dc:Bounds x="1890" y="355" width="50" height="50" />
+        <bpmndi:BPMNLabel><dc:Bounds x="1858" y="412" width="114" height="27" /></bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+
+      <!-- Task_Traitement_Anomalie — below gateway inside lane 2 -->
+      <bpmndi:BPMNShape id="Shape_Task_Traitement_Anomalie" bpmnElement="Task_Traitement_Anomalie">
+        <dc:Bounds x="1865" y="460" width="130" height="80" />
+      </bpmndi:BPMNShape>
+
+      <!-- ===================== LANE 3 : Phase 3 ===================== -->
+      <bpmndi:BPMNShape id="Shape_Lane_Phase3" bpmnElement="Lane_Phase3" isHorizontal="true">
+        <dc:Bounds x="30" y="560" width="4190" height="280" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="35" y="650" width="25" height="100" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+
+      <!-- Task_Soumission_DAU — Phase 3, aligned with x=1960 -->
+      <bpmndi:BPMNShape id="Shape_Task_Soumission_DAU" bpmnElement="Task_Soumission_DAU">
+        <dc:Bounds x="1960" y="620" width="130" height="80" />
+      </bpmndi:BPMNShape>
+
+      <!-- Service_Analyse_Risque -->
+      <bpmndi:BPMNShape id="Shape_Service_Analyse_Risque" bpmnElement="Service_Analyse_Risque">
+        <dc:Bounds x="2110" y="620" width="130" height="80" />
+      </bpmndi:BPMNShape>
+
+      <!-- Gateway_Circuit  cx=2285, cy=660 -->
+      <bpmndi:BPMNShape id="Shape_Gateway_Circuit" bpmnElement="Gateway_Circuit" isMarkerVisible="true">
+        <dc:Bounds x="2260" y="635" width="50" height="50" />
+        <bpmndi:BPMNLabel><dc:Bounds x="2260" y="692" width="50" height="14" /></bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+
+      <!-- Task_Controle_Documentaire — ORANGE: same lane, upper sub-row y=620 offset right -->
+      <bpmndi:BPMNShape id="Shape_Task_Controle_Documentaire" bpmnElement="Task_Controle_Documentaire">
+        <dc:Bounds x="2330" y="600" width="130" height="80" />
+      </bpmndi:BPMNShape>
+
+      <!-- Task_Inspection_Physique — ROUGE: same lane, lower sub-row y=710 -->
+      <bpmndi:BPMNShape id="Shape_Task_Inspection_Physique" bpmnElement="Task_Inspection_Physique">
+        <dc:Bounds x="2330" y="700" width="130" height="80" />
+      </bpmndi:BPMNShape>
+
+      <!-- Service_Calcul_Droits_Taxes -->
+      <bpmndi:BPMNShape id="Shape_Service_Calcul_Droits_Taxes" bpmnElement="Service_Calcul_Droits_Taxes">
+        <dc:Bounds x="2480" y="620" width="130" height="80" />
+      </bpmndi:BPMNShape>
+
+      <!-- Service_Generation_Avis_Paiement -->
+      <bpmndi:BPMNShape id="Shape_Service_Generation_Avis_Paiement" bpmnElement="Service_Generation_Avis_Paiement">
+        <dc:Bounds x="2630" y="620" width="130" height="80" />
+      </bpmndi:BPMNShape>
+
+      <!-- Task_Paiement_Electronique -->
+      <bpmndi:BPMNShape id="Shape_Task_Paiement_Electronique" bpmnElement="Task_Paiement_Electronique">
+        <dc:Bounds x="2780" y="620" width="130" height="80" />
+      </bpmndi:BPMNShape>
+
+      <!-- Service_Confirmation_Quittance -->
+      <bpmndi:BPMNShape id="Shape_Service_Confirmation_Quittance" bpmnElement="Service_Confirmation_Quittance">
+        <dc:Bounds x="2930" y="620" width="130" height="80" />
+      </bpmndi:BPMNShape>
+
+      <!-- Gateway_Paiement_Confirme  cx=3105, cy=660 -->
+      <bpmndi:BPMNShape id="Shape_Gateway_Paiement_Confirme" bpmnElement="Gateway_Paiement_Confirme" isMarkerVisible="true">
+        <dc:Bounds x="3080" y="635" width="50" height="50" />
+        <bpmndi:BPMNLabel><dc:Bounds x="3048" y="692" width="114" height="27" /></bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+
+      <!-- Task_Regulariser_Paiement — below gateway in lane 3 -->
+      <bpmndi:BPMNShape id="Shape_Task_Regulariser_Paiement" bpmnElement="Task_Regulariser_Paiement">
+        <dc:Bounds x="3055" y="730" width="130" height="80" />
+      </bpmndi:BPMNShape>
+
+      <!-- ===================== LANE 4 : Phase 4 ===================== -->
+      <bpmndi:BPMNShape id="Shape_Lane_Phase4" bpmnElement="Lane_Phase4" isHorizontal="true">
+        <dc:Bounds x="30" y="840" width="4190" height="280" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="35" y="930" width="25" height="100" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+
+      <!-- Service_Verifier_Conditions_BAE — Phase 4 starts -->
+      <bpmndi:BPMNShape id="Shape_Service_Verifier_Conditions_BAE" bpmnElement="Service_Verifier_Conditions_BAE">
+        <dc:Bounds x="3150" y="900" width="130" height="80" />
+      </bpmndi:BPMNShape>
+
+      <!-- Gateway_Conditions_BAE  cx=3330, cy=940 -->
+      <bpmndi:BPMNShape id="Shape_Gateway_Conditions_BAE" bpmnElement="Gateway_Conditions_BAE" isMarkerVisible="true">
+        <dc:Bounds x="3305" y="915" width="50" height="50" />
+        <bpmndi:BPMNLabel><dc:Bounds x="3282" y="972" width="96" height="27" /></bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+
+      <!-- Task_Complement_BAE — below gateway in lane 4 -->
+      <bpmndi:BPMNShape id="Shape_Task_Complement_BAE" bpmnElement="Task_Complement_BAE">
+        <dc:Bounds x="3280" y="1010" width="130" height="80" />
+      </bpmndi:BPMNShape>
+
+      <!-- Task_Emission_BAE -->
+      <bpmndi:BPMNShape id="Shape_Task_Emission_BAE" bpmnElement="Task_Emission_BAE">
+        <dc:Bounds x="3370" y="900" width="130" height="80" />
+      </bpmndi:BPMNShape>
+
+      <!-- Task_Bon_A_Delivrer -->
+      <bpmndi:BPMNShape id="Shape_Task_Bon_A_Delivrer" bpmnElement="Task_Bon_A_Delivrer">
+        <dc:Bounds x="3520" y="900" width="130" height="80" />
+      </bpmndi:BPMNShape>
+
+      <!-- Task_Constat_Sortie -->
+      <bpmndi:BPMNShape id="Shape_Task_Constat_Sortie" bpmnElement="Task_Constat_Sortie">
+        <dc:Bounds x="3670" y="900" width="130" height="80" />
+      </bpmndi:BPMNShape>
+
+      <!-- Service_Apurement_Dossier -->
+      <bpmndi:BPMNShape id="Shape_Service_Apurement_Dossier" bpmnElement="Service_Apurement_Dossier">
+        <dc:Bounds x="3820" y="900" width="130" height="80" />
+      </bpmndi:BPMNShape>
+
+      <!-- Service_Cloture_Archivage -->
+      <bpmndi:BPMNShape id="Shape_Service_Cloture_Archivage" bpmnElement="Service_Cloture_Archivage">
+        <dc:Bounds x="3970" y="900" width="130" height="80" />
+      </bpmndi:BPMNShape>
+
+      <!-- EndEvent_Fin  cx=4138, cy=940 -->
+      <bpmndi:BPMNShape id="Shape_EndEvent_Fin" bpmnElement="EndEvent_Fin">
+        <dc:Bounds x="4120" y="922" width="36" height="36" />
+        <bpmndi:BPMNLabel><dc:Bounds x="4097" y="965" width="84" height="27" /></bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+
+      <!-- ====================================================
+           SEQUENCE FLOW EDGES
+           ==================================================== -->
+
+      <!-- Flow_001: StartEvent → Task_Saisie -->
+      <bpmndi:BPMNEdge id="Edge_Flow_001" bpmnElement="Flow_001">
+        <di:waypoint x="206" y="100" />
+        <di:waypoint x="250" y="100" />
+      </bpmndi:BPMNEdge>
+
+      <!-- Flow_002: Task_Saisie → Service_Eligibilite -->
+      <bpmndi:BPMNEdge id="Edge_Flow_002" bpmnElement="Flow_002">
+        <di:waypoint x="380" y="100" />
+        <di:waypoint x="400" y="100" />
+      </bpmndi:BPMNEdge>
+
+      <!-- Flow_003: Service_Eligibilite → Gateway_Eligibilite -->
+      <bpmndi:BPMNEdge id="Edge_Flow_003" bpmnElement="Flow_003">
+        <di:waypoint x="530" y="100" />
+        <di:waypoint x="550" y="100" />
+      </bpmndi:BPMNEdge>
+
+      <!-- Flow_003_Yes: Gateway_Eligibilite → Task_Procedures -->
+      <bpmndi:BPMNEdge id="Edge_Flow_003_Yes" bpmnElement="Flow_003_Yes">
+        <di:waypoint x="600" y="100" />
+        <di:waypoint x="620" y="100" />
+        <bpmndi:BPMNLabel><dc:Bounds x="603" y="82" width="20" height="14" /></bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+
+      <!-- Flow_003_No: Gateway_Eligibilite → EndEvent_Rejet (downward in lane 1) -->
+      <bpmndi:BPMNEdge id="Edge_Flow_003_No" bpmnElement="Flow_003_No">
+        <di:waypoint x="575" y="125" />
+        <di:waypoint x="575" y="200" />
+        <bpmndi:BPMNLabel><dc:Bounds x="580" y="158" width="24" height="14" /></bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+
+      <!-- Flow_004: Task_Procedures → Task_DI -->
+      <bpmndi:BPMNEdge id="Edge_Flow_004" bpmnElement="Flow_004">
+        <di:waypoint x="750" y="100" />
+        <di:waypoint x="770" y="100" />
+      </bpmndi:BPMNEdge>
+
+      <!-- Flow_005: Task_DI → Task_Domiciliation -->
+      <bpmndi:BPMNEdge id="Edge_Flow_005" bpmnElement="Flow_005">
+        <di:waypoint x="900" y="100" />
+        <di:waypoint x="920" y="100" />
+      </bpmndi:BPMNEdge>
+
+      <!-- Flow_006: Task_Domiciliation → Task_Visas -->
+      <bpmndi:BPMNEdge id="Edge_Flow_006" bpmnElement="Flow_006">
+        <di:waypoint x="1050" y="100" />
+        <di:waypoint x="1070" y="100" />
+      </bpmndi:BPMNEdge>
+
+      <!-- Flow_007: Task_Visas → Service_PreDedouanement -->
+      <bpmndi:BPMNEdge id="Edge_Flow_007" bpmnElement="Flow_007">
+        <di:waypoint x="1200" y="100" />
+        <di:waypoint x="1220" y="100" />
+      </bpmndi:BPMNEdge>
+
+      <!-- Flow_008: Service_PreDedouanement → Gateway_PreDedouanement -->
+      <bpmndi:BPMNEdge id="Edge_Flow_008" bpmnElement="Flow_008">
+        <di:waypoint x="1350" y="100" />
+        <di:waypoint x="1370" y="100" />
+      </bpmndi:BPMNEdge>
+
+      <!-- Flow_008_Yes: Gateway_PreDedouanement → Task_Manifeste (crosses to lane 2) -->
+      <bpmndi:BPMNEdge id="Edge_Flow_008_Yes" bpmnElement="Flow_008_Yes">
+        <di:waypoint x="1420" y="100" />
+        <di:waypoint x="1505" y="100" />
+        <di:waypoint x="1505" y="340" />
+        <bpmndi:BPMNLabel><dc:Bounds x="1425" y="82" width="20" height="14" /></bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+
+      <!-- Flow_008_No: Gateway_PreDedouanement → Task_Complement (downward in lane 1) -->
+      <bpmndi:BPMNEdge id="Edge_Flow_008_No" bpmnElement="Flow_008_No">
+        <di:waypoint x="1395" y="125" />
+        <di:waypoint x="1395" y="170" />
+        <bpmndi:BPMNLabel><dc:Bounds x="1400" y="143" width="24" height="14" /></bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+
+      <!-- Flow_008_Retry: Task_Complement → Service_PreDedouanement (loop back in lane 1) -->
+      <bpmndi:BPMNEdge id="Edge_Flow_008_Retry" bpmnElement="Flow_008_Retry">
+        <di:waypoint x="1345" y="210" />
+        <di:waypoint x="1285" y="210" />
+        <di:waypoint x="1285" y="140" />
+      </bpmndi:BPMNEdge>
+
+      <!-- Flow_009: Task_Manifeste → Task_Dechargement (within lane 2) -->
+      <bpmndi:BPMNEdge id="Edge_Flow_009" bpmnElement="Flow_009">
+        <di:waypoint x="1570" y="380" />
+        <di:waypoint x="1590" y="380" />
+      </bpmndi:BPMNEdge>
+
+      <!-- Flow_010: Task_Dechargement → Task_Reconnaissance -->
+      <bpmndi:BPMNEdge id="Edge_Flow_010" bpmnElement="Flow_010">
+        <di:waypoint x="1720" y="380" />
+        <di:waypoint x="1740" y="380" />
+      </bpmndi:BPMNEdge>
+
+      <!-- Flow_011: Task_Reconnaissance → Gateway_Marchandise -->
+      <bpmndi:BPMNEdge id="Edge_Flow_011" bpmnElement="Flow_011">
+        <di:waypoint x="1870" y="380" />
+        <di:waypoint x="1890" y="380" />
+      </bpmndi:BPMNEdge>
+
+      <!-- Flow_011_Yes: Gateway_Marchandise → Task_Soumission_DAU (crosses to lane 3) -->
+      <bpmndi:BPMNEdge id="Edge_Flow_011_Yes" bpmnElement="Flow_011_Yes">
+        <di:waypoint x="1940" y="380" />
+        <di:waypoint x="2025" y="380" />
+        <di:waypoint x="2025" y="620" />
+        <bpmndi:BPMNLabel><dc:Bounds x="1944" y="362" width="20" height="14" /></bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+
+      <!-- Flow_011_No: Gateway_Marchandise → Task_Traitement_Anomalie (downward in lane 2) -->
+      <bpmndi:BPMNEdge id="Edge_Flow_011_No" bpmnElement="Flow_011_No">
+        <di:waypoint x="1915" y="405" />
+        <di:waypoint x="1915" y="460" />
+        <bpmndi:BPMNLabel><dc:Bounds x="1920" y="428" width="24" height="14" /></bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+
+      <!-- Flow_011_Anomalie: Task_Traitement_Anomalie → Task_Soumission_DAU (crosses to lane 3) -->
+      <bpmndi:BPMNEdge id="Edge_Flow_011_Anomalie" bpmnElement="Flow_011_Anomalie">
+        <di:waypoint x="1995" y="500" />
+        <di:waypoint x="2025" y="500" />
+        <di:waypoint x="2025" y="620" />
+      </bpmndi:BPMNEdge>
+
+      <!-- Flow_012: Task_Soumission_DAU → Service_Analyse_Risque -->
+      <bpmndi:BPMNEdge id="Edge_Flow_012" bpmnElement="Flow_012">
+        <di:waypoint x="2090" y="660" />
+        <di:waypoint x="2110" y="660" />
+      </bpmndi:BPMNEdge>
+
+      <!-- Flow_013: Service_Analyse_Risque → Gateway_Circuit -->
+      <bpmndi:BPMNEdge id="Edge_Flow_013" bpmnElement="Flow_013">
+        <di:waypoint x="2240" y="660" />
+        <di:waypoint x="2260" y="660" />
+      </bpmndi:BPMNEdge>
+
+      <!-- Flow_013_Vert: Gateway_Circuit → Service_Calcul (direct, same row) -->
+      <bpmndi:BPMNEdge id="Edge_Flow_013_Vert" bpmnElement="Flow_013_Vert">
+        <di:waypoint x="2310" y="660" />
+        <di:waypoint x="2480" y="660" />
+        <bpmndi:BPMNLabel><dc:Bounds x="2370" y="642" width="27" height="14" /></bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+
+      <!-- Flow_013_Orange: Gateway_Circuit → Task_Controle_Documentaire (upper sub-row) -->
+      <bpmndi:BPMNEdge id="Edge_Flow_013_Orange" bpmnElement="Flow_013_Orange">
+        <di:waypoint x="2285" y="635" />
+        <di:waypoint x="2285" y="640" />
+        <di:waypoint x="2330" y="640" />
+        <bpmndi:BPMNLabel><dc:Bounds x="2290" y="620" width="40" height="14" /></bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+
+      <!-- Flow_013_Rouge: Gateway_Circuit → Task_Inspection_Physique (lower sub-row) -->
+      <bpmndi:BPMNEdge id="Edge_Flow_013_Rouge" bpmnElement="Flow_013_Rouge">
+        <di:waypoint x="2285" y="685" />
+        <di:waypoint x="2285" y="740" />
+        <di:waypoint x="2330" y="740" />
+        <bpmndi:BPMNLabel><dc:Bounds x="2290" y="720" width="36" height="14" /></bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+
+      <!-- Flow_014_Orange: Task_Controle → Service_Calcul -->
+      <bpmndi:BPMNEdge id="Edge_Flow_014_Orange" bpmnElement="Flow_014_Orange">
+        <di:waypoint x="2460" y="640" />
+        <di:waypoint x="2480" y="640" />
+        <di:waypoint x="2480" y="660" />
+      </bpmndi:BPMNEdge>
+
+      <!-- Flow_014_Rouge: Task_Inspection → Service_Calcul -->
+      <bpmndi:BPMNEdge id="Edge_Flow_014_Rouge" bpmnElement="Flow_014_Rouge">
+        <di:waypoint x="2460" y="740" />
+        <di:waypoint x="2480" y="740" />
+        <di:waypoint x="2480" y="700" />
+      </bpmndi:BPMNEdge>
+
+      <!-- Flow_015: Service_Calcul → Service_Avis_Paiement -->
+      <bpmndi:BPMNEdge id="Edge_Flow_015" bpmnElement="Flow_015">
+        <di:waypoint x="2610" y="660" />
+        <di:waypoint x="2630" y="660" />
+      </bpmndi:BPMNEdge>
+
+      <!-- Flow_016: Service_Avis → Task_Paiement -->
+      <bpmndi:BPMNEdge id="Edge_Flow_016" bpmnElement="Flow_016">
+        <di:waypoint x="2760" y="660" />
+        <di:waypoint x="2780" y="660" />
+      </bpmndi:BPMNEdge>
+
+      <!-- Flow_017: Task_Paiement → Service_Confirmation -->
+      <bpmndi:BPMNEdge id="Edge_Flow_017" bpmnElement="Flow_017">
+        <di:waypoint x="2910" y="660" />
+        <di:waypoint x="2930" y="660" />
+      </bpmndi:BPMNEdge>
+
+      <!-- Flow_018: Service_Confirmation → Gateway_Paiement -->
+      <bpmndi:BPMNEdge id="Edge_Flow_018" bpmnElement="Flow_018">
+        <di:waypoint x="3060" y="660" />
+        <di:waypoint x="3080" y="660" />
+      </bpmndi:BPMNEdge>
+
+      <!-- Flow_018_Yes: Gateway_Paiement → Service_Verifier_Conditions_BAE (crosses to lane 4) -->
+      <bpmndi:BPMNEdge id="Edge_Flow_018_Yes" bpmnElement="Flow_018_Yes">
+        <di:waypoint x="3130" y="660" />
+        <di:waypoint x="3215" y="660" />
+        <di:waypoint x="3215" y="900" />
+        <bpmndi:BPMNLabel><dc:Bounds x="3134" y="642" width="20" height="14" /></bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+
+      <!-- Flow_018_No: Gateway_Paiement → Task_Regulariser (downward in lane 3) -->
+      <bpmndi:BPMNEdge id="Edge_Flow_018_No" bpmnElement="Flow_018_No">
+        <di:waypoint x="3105" y="685" />
+        <di:waypoint x="3105" y="730" />
+        <bpmndi:BPMNLabel><dc:Bounds x="3110" y="703" width="24" height="14" /></bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+
+      <!-- Flow_017_Retry: Task_Regulariser → Task_Paiement (loop back in lane 3) -->
+      <bpmndi:BPMNEdge id="Edge_Flow_017_Retry" bpmnElement="Flow_017_Retry">
+        <di:waypoint x="3055" y="770" />
+        <di:waypoint x="2845" y="770" />
+        <di:waypoint x="2845" y="700" />
+      </bpmndi:BPMNEdge>
+
+      <!-- Flow_019: Service_Verifier_Conditions_BAE → Gateway_Conditions_BAE -->
+      <bpmndi:BPMNEdge id="Edge_Flow_019" bpmnElement="Flow_019">
+        <di:waypoint x="3280" y="940" />
+        <di:waypoint x="3305" y="940" />
+      </bpmndi:BPMNEdge>
+
+      <!-- Flow_019_Yes: Gateway_Conditions_BAE → Task_Emission_BAE -->
+      <bpmndi:BPMNEdge id="Edge_Flow_019_Yes" bpmnElement="Flow_019_Yes">
+        <di:waypoint x="3355" y="940" />
+        <di:waypoint x="3370" y="940" />
+        <bpmndi:BPMNLabel><dc:Bounds x="3358" y="922" width="20" height="14" /></bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+
+      <!-- Flow_019_No: Gateway_Conditions_BAE → Task_Complement_BAE (downward in lane 4) -->
+      <bpmndi:BPMNEdge id="Edge_Flow_019_No" bpmnElement="Flow_019_No">
+        <di:waypoint x="3330" y="965" />
+        <di:waypoint x="3330" y="1010" />
+        <bpmndi:BPMNLabel><dc:Bounds x="3335" y="983" width="24" height="14" /></bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+
+      <!-- Flow_019_Retry: Task_Complement_BAE → Service_Verifier_Conditions_BAE (loop back) -->
+      <bpmndi:BPMNEdge id="Edge_Flow_019_Retry" bpmnElement="Flow_019_Retry">
+        <di:waypoint x="3280" y="1050" />
+        <di:waypoint x="3215" y="1050" />
+        <di:waypoint x="3215" y="980" />
+      </bpmndi:BPMNEdge>
+
+      <!-- Flow_020: Task_Emission_BAE → Task_Bon_A_Delivrer -->
+      <bpmndi:BPMNEdge id="Edge_Flow_020" bpmnElement="Flow_020">
+        <di:waypoint x="3500" y="940" />
+        <di:waypoint x="3520" y="940" />
+      </bpmndi:BPMNEdge>
+
+      <!-- Flow_021: Task_Bon_A_Delivrer → Task_Constat_Sortie -->
+      <bpmndi:BPMNEdge id="Edge_Flow_021" bpmnElement="Flow_021">
+        <di:waypoint x="3650" y="940" />
+        <di:waypoint x="3670" y="940" />
+      </bpmndi:BPMNEdge>
+
+      <!-- Flow_022: Task_Constat_Sortie → Service_Apurement -->
+      <bpmndi:BPMNEdge id="Edge_Flow_022" bpmnElement="Flow_022">
+        <di:waypoint x="3800" y="940" />
+        <di:waypoint x="3820" y="940" />
+      </bpmndi:BPMNEdge>
+
+      <!-- Flow_023: Service_Apurement → Service_Cloture -->
+      <bpmndi:BPMNEdge id="Edge_Flow_023" bpmnElement="Flow_023">
+        <di:waypoint x="3950" y="940" />
+        <di:waypoint x="3970" y="940" />
+      </bpmndi:BPMNEdge>
+
+      <!-- Flow_024: Service_Cloture → EndEvent_Fin -->
+      <bpmndi:BPMNEdge id="Edge_Flow_024" bpmnElement="Flow_024">
+        <di:waypoint x="4100" y="940" />
+        <di:waypoint x="4120" y="940" />
+      </bpmndi:BPMNEdge>
+
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+
+</bpmn:definitions>

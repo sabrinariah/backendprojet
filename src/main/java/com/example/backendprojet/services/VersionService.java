@@ -1,39 +1,54 @@
 package com.example.backendprojet.services;
 
+import com.example.backendprojet.entity.RegleMetier;
 import com.example.backendprojet.entity.Version;
+import com.example.backendprojet.repository.RegleMetierRepository;
 import com.example.backendprojet.repository.VersionRepository;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.util.Comparator;
 import java.util.List;
 
 @Service
 public class VersionService {
 
-    private final VersionRepository versionRepository;
+    @Autowired
+    private VersionRepository versionRepository;
 
-    public VersionService(VersionRepository versionRepository) {
-        this.versionRepository = versionRepository;
-    }
+    @Autowired
+    private RegleMetierRepository regleMetierRepository;
 
-    // ✅ 1. toutes les versions
-    public List<Version> getAllVersions() {
+    public List<Version> getAll() {
         return versionRepository.findAll();
     }
 
-    // ✅ 2. versions par règle métier
-    public List<Version> getVersionsByRegleId(Long regleId) {
+    public List<Version> findByRegleId(Long regleId) {
         return versionRepository.findByRegleMetier_Id(regleId);
     }
 
-    // ✅ 3. dernière version d'une règle métier
-    public Version getLastVersionByRegleId(Long regleId) {
-        return versionRepository.findByRegleMetier_Id(regleId)
-                .stream()
-                .max(Comparator.comparing(Version::getDateCreation))
-                .orElse(null);
+    public Version getById(Long id) {
+        return versionRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Version non trouvée : " + id));
     }
-    public List<Version> findByRegleId(Long regleId) {
-        return versionRepository.findByRegleMetier_Id(regleId);
+
+    public Version create(Version v) {
+        // Recharger la règle depuis la BDD si elle est fournie
+        if (v.getRegleMetier() != null && v.getRegleMetier().getId() != null) {
+            RegleMetier regle = regleMetierRepository.findById(v.getRegleMetier().getId())
+                    .orElseThrow(() -> new RuntimeException("Règle introuvable"));
+            v.setRegleMetier(regle);
+        }
+        return versionRepository.save(v);
+    }
+
+    public Version update(Long id, Version v) {
+        Version existing = getById(id);
+        existing.setNumero(v.getNumero());
+        existing.setDescription(v.getDescription());
+        return versionRepository.save(existing);
+    }
+
+    public void delete(Long id) {
+        versionRepository.deleteById(id);
     }
 }
