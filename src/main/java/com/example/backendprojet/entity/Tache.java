@@ -1,8 +1,15 @@
 package com.example.backendprojet.entity;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
 import jakarta.persistence.*;
+import lombok.*;
 
 @Entity
+@Builder
+@Table(name = "tache")
+@Getter
+@Setter
+@AllArgsConstructor
 public class Tache {
 
     @Id
@@ -13,19 +20,18 @@ public class Tache {
     private String type;
     private String statut;
     private String description;
-
     private String assignee;
-
-    // 🔥 AJOUT DU CHAMP ORDRE
     private Integer ordre;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "processus_id")
+    @JsonBackReference
     private Processus processus;
 
     public Tache() {}
 
     public Long getId() { return id; }
+    public void setId(Long id) { this.id = id; }
 
     public String getNom() { return nom; }
     public void setNom(String nom) { this.nom = nom; }
@@ -42,7 +48,6 @@ public class Tache {
     public String getAssignee() { return assignee; }
     public void setAssignee(String assignee) { this.assignee = assignee; }
 
-    // 🔥 GETTER / SETTER ORDRE
     public Integer getOrdre() { return ordre; }
     public void setOrdre(Integer ordre) { this.ordre = ordre; }
 

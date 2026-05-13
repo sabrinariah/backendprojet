@@ -1,37 +1,50 @@
 package com.example.backendprojet.controller;
 
-import com.example.backendprojet.entity.Tache;
+
+import  com.example.backendprojet.dto.TacheDTO;
 import com.example.backendprojet.services.TacheService;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
 @RestController
 @RequestMapping("/api/taches")
-@CrossOrigin("*")
+@RequiredArgsConstructor
+@CrossOrigin(origins = "http://localhost:4200")
 public class TacheController {
 
-    @Autowired
-    private TacheService service;
+    private final TacheService service;
 
-    @PostMapping("/processes/{id}")
-    public Tache add(@PathVariable Long id, @RequestBody Tache t) {
-        return service.addTache(id, t);
+    @GetMapping
+    public List<TacheDTO> getAll() {
+        return service.findAll();
     }
 
-    @GetMapping("/processes/{id}")
-    public List<Tache> getByProcessus(@PathVariable Long id) {
-        return service.getByProcessus(id);
+    @GetMapping("/processus/{processusId}")
+    public List<TacheDTO> getByProcessus(@PathVariable Long processusId) {
+        return service.findByProcessus(processusId);
     }
 
-    // ✅ Nouvelle méthode pour supprimer une tâche
-    @DeleteMapping("/{id}")
-    public void deleteTache(@PathVariable Long id) {
-        service.deleteTache(id);
+    @GetMapping("/{id}")
+    public TacheDTO getOne(@PathVariable Long id) {
+        return service.findById(id);
     }
+
+    @PostMapping
+    public TacheDTO create(@RequestBody TacheDTO dto) {
+        return service.create(dto);
+    }
+
     @PutMapping("/{id}")
-    public Tache updateTache(@PathVariable Long id, @RequestBody Tache tache) {
-        return service.updateTache(id, tache);
+    public TacheDTO update(@PathVariable Long id, @RequestBody TacheDTO dto) {
+        return service.update(id, dto);
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> delete(@PathVariable Long id) {
+        service.delete(id);
+        return ResponseEntity.noContent().build();
     }
 }

@@ -1,10 +1,15 @@
 package com.example.backendprojet.entity;
 
 import jakarta.persistence.*;
+import lombok.*;
+
 import java.time.LocalDate;
 import java.util.*;
-
 @Entity
+@Table(name = "processus")
+@AllArgsConstructor
+@NoArgsConstructor
+@Builder
 public class Processus {
 
     @Id
@@ -17,13 +22,11 @@ public class Processus {
     private LocalDate dateFin;
     private Boolean actif = true;
 
-    private String bpmnProcessId; // utilisé par Camunda
+    private String bpmnProcessId;
 
-    // ✅ CORRECTION ICI (processus et pas processes)
     @OneToMany(mappedBy = "processus", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Tache> taches = new ArrayList<>();
 
-    // 🔹 Many-to-Many avec règles métier
     @ManyToMany(cascade = {CascadeType.PERSIST, CascadeType.MERGE})
     @JoinTable(
             name = "processus_regle",
@@ -32,13 +35,12 @@ public class Processus {
     )
     private Set<RegleMetier> regles = new HashSet<>();
 
-    public Processus() {}
-
     // =========================
-    // GETTERS & SETTERS
+    // GETTERS & SETTERS MANUELS
     // =========================
 
     public Long getId() { return id; }
+    public void setId(Long id) { this.id = id; }
 
     public String getNom() { return nom; }
     public void setNom(String nom) { this.nom = nom; }
@@ -63,18 +65,4 @@ public class Processus {
 
     public Set<RegleMetier> getRegles() { return regles; }
     public void setRegles(Set<RegleMetier> regles) { this.regles = regles; }
-
-    // =========================
-    // MÉTHODES UTILES
-    // =========================
-
-    public void addTache(Tache tache) {
-        taches.add(tache);
-        tache.setProcessus(this);
-    }
-
-    public void removeTache(Tache tache) {
-        taches.remove(tache);
-        tache.setProcessus(null);
-    }
 }
